@@ -6,6 +6,7 @@ const API = axios.create({
   baseURL: base,
 });
 
+
 // Attach JWT token automatically
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
@@ -14,6 +15,20 @@ API.interceptors.request.use((req) => {
   }
   return req;
 });
+
+// Handle 401 (Invalid Token) globally
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn("Session expired or invalid token. Logging out...");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Named exports
 export const loginUser = (data) => API.post("/auth/login", data);
