@@ -27,7 +27,8 @@ yarn-debug.log*
 # ─── Environment Variables (NEVER push secrets) ───────────────────────────────
 .env
 .env.local
-.env.production
+# .env.production is committed intentionally — contains only public API URLs
+# Vercel needs it during build to inject VITE_ variables
 server/.env
 ai-api/.env
 
