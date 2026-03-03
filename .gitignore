@@ -10,17 +10,12 @@ ai-api/**/__pycache__/
 ai-api/dataset/
 ai-api/dataset_merged/
 
-# ─── Trained Model Files (too large for GitHub) ───────────────────────────────
-ai-api/model/*.h5
-ai-api/model/*.keras
-ai-api/model/*.pb
+# ─── Model Plots (generated artifacts, not needed in repo) ───────────────────
 ai-api/model/training_curves.png
 ai-api/model/confusion_matrix.png
 ai-api/model/per_class_f1.png
-# Keep class_indices.json and training history CSVs (small and useful)
-!ai-api/model/class_indices.json
-!ai-api/model/history_phase1.csv
-!ai-api/model/history_phase2.csv
+# Model files (.h5) are committed — 45MB, safely under GitHub's 100MB limit
+# class_indices.json and CSVs are also committed (small and useful)
 
 # ─── Node.js ─────────────────────────────────────────────────────────────────
 node_modules/
