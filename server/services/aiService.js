@@ -39,25 +39,38 @@ const callAI = async (imageUrl) => {
     console.log("[aiService] Step 2: Calling AI API at:", AI_API_URL + "/predict");
 
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    // Pre-warm ping — kick Render awake before sending the heavy POST
+    try {
+      console.log("[aiService] Step 2a: Pre-warm ping to AI API...");
+      await axios.get(`${AI_API_URL}/health`, { timeout: 10000 });
+      console.log("[aiService] Step 2a OK: AI API already warm.");
+    } catch (_) {
+      console.log("[aiService] Step 2a: AI API cold — waiting 25s for warm-up...");
+      await sleep(25000); // give Render time to load the ML model
+    }
+
     let pythonResponse;
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    const MAX_ATTEMPTS = 5;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
         pythonResponse = await axios.post(
           `${AI_API_URL}/predict`,
           formData,
           {
             headers: { ...formData.getHeaders(), "Content-Length": contentLength },
-            timeout: 90000  // 90s timeout — model load can be slow on cold start
+            timeout: 120000  // 120s timeout — model load can be slow on cold start
           }
         );
         break; // success — exit retry loop
       } catch (retryErr) {
         const status = retryErr.response?.status;
-        if ((status === 502 || status === 503 || !status) && attempt < 3) {
-          console.log(`[aiService] AI API returned ${status || 'no response'} (cold start). Retrying in 15s... (attempt ${attempt}/3)`);
-          await sleep(15000); // wait 15s for Render to wake up
+        const isRetryable = status === 502 || status === 503 || status === 504 || !status;
+        if (isRetryable && attempt < MAX_ATTEMPTS) {
+          console.log(`[aiService] AI API returned ${status || 'no response'} (cold start). Retrying in 20s... (attempt ${attempt}/${MAX_ATTEMPTS})`);
+          await sleep(20000);
         } else {
-          throw retryErr; // give up after 3 attempts
+          throw retryErr; // give up after MAX_ATTEMPTS
         }
       }
     }

@@ -7,6 +7,10 @@ app = FastAPI()
 def home():
     return {"message": "Real AI Model API running"}
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.post("/predict")
 async def predict(image: UploadFile = File(...)):
     image_bytes = await image.read()

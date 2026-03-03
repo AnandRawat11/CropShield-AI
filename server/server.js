@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const axios = require("axios");
 require("dotenv").config();
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
@@ -57,5 +58,19 @@ connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Allowed CORS origins: ${allowedOrigins.join(", ")} + *.vercel.app`);
+
+    // Keep the Render AI API warm — ping every 13 min (Render sleeps after ~15 min)
+    const AI_API_URL = process.env.AI_API_URL;
+    if (AI_API_URL && !AI_API_URL.includes("127.0.0.1")) {
+      setInterval(async () => {
+        try {
+          await axios.get(`${AI_API_URL}/health`, { timeout: 10000 });
+          console.log("[keepAlive] AI API pinged successfully");
+        } catch (e) {
+          console.warn("[keepAlive] AI API ping failed (may be sleeping):", e.message);
+        }
+      }, 13 * 60 * 1000); // 13 minutes
+      console.log("[keepAlive] Keep-alive pinger started for AI API");
+    }
   });
 });
