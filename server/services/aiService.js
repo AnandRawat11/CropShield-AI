@@ -34,21 +34,33 @@ const callAI = async (imageUrl) => {
       });
     });
 
-    // 2️⃣ Call Python ML Model on Render
+    // 2️⃣ Call Python ML Model on Render (with retry for cold-start 502)
     const AI_API_URL = process.env.AI_API_URL || "http://127.0.0.1:8000";
     console.log("[aiService] Step 2: Calling AI API at:", AI_API_URL + "/predict");
 
-    const pythonResponse = await axios.post(
-      `${AI_API_URL}/predict`,
-      formData,
-      {
-        headers: {
-          ...formData.getHeaders(),
-          "Content-Length": contentLength
-        },
-        timeout: 60000  // 60s — Render free tier may cold-start
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    let pythonResponse;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        pythonResponse = await axios.post(
+          `${AI_API_URL}/predict`,
+          formData,
+          {
+            headers: { ...formData.getHeaders(), "Content-Length": contentLength },
+            timeout: 90000  // 90s timeout — model load can be slow on cold start
+          }
+        );
+        break; // success — exit retry loop
+      } catch (retryErr) {
+        const status = retryErr.response?.status;
+        if ((status === 502 || status === 503 || !status) && attempt < 3) {
+          console.log(`[aiService] AI API returned ${status || 'no response'} (cold start). Retrying in 15s... (attempt ${attempt}/3)`);
+          await sleep(15000); // wait 15s for Render to wake up
+        } else {
+          throw retryErr; // give up after 3 attempts
+        }
       }
-    );
+    }
 
     const pythonResult = pythonResponse.data;
     console.log("[aiService] Step 2 OK — Python ML Result:", pythonResult);
