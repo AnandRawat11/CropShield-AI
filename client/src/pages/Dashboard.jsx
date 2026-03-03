@@ -22,7 +22,8 @@ import {
   Zap,
   ChevronRight,
   FileImage,
-  Loader2
+  Loader2,
+  ScanSearch
 } from "lucide-react";
 
 import {
