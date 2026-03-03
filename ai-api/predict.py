@@ -13,7 +13,7 @@ import os
 from tensorflow.keras.applications.efficientnet import preprocess_input
 
 # ─── Config ──────────────────────────────────────────────────────────────────
-IMG_SIZE           = 300     # EfficientNetB3 input size
+IMG_SIZE           = 224     # EfficientNetB0 trained at 224x224
 MODEL_PATH         = "model/crop_disease_model_fixed.h5"
 INDEX_PATH         = "model/class_indices.json"
 
@@ -34,8 +34,9 @@ INDEX_PATH         = "model/class_indices.json"
 CONFIDENCE_THRESHOLD = 0.30  # Reject if max softmax < this value
 
 # ─── Load Model & Class Names ─────────────────────────────────────────────────
-print("Loading EfficientNetB3 disease model...")
-model = tf.keras.models.load_model(MODEL_PATH)
+print("Loading EfficientNetB0 disease model...")
+model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+
 
 def load_class_names():
     try:

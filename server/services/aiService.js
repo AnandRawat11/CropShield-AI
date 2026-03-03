@@ -89,11 +89,12 @@ const callAI = async (imageUrl) => {
     console.log(`[aiService] About to call Gemini for disease: ${diseaseName}`);
 
     const base64Image = imageBuffer.toString("base64");
-    const promptText = `The local ML model predicted this crop disease is: ${diseaseName}. 
-However, that ML model is ONLY trained on Tomato and Potato plants. 
-Please look at the attached image. 
-If the plant is INDEED a Tomato or Potato, trust the ML prediction and provide the treatment for ${diseaseName}. 
-If the plant is a DIFFERENT crop (e.g., Strawberry, Corn, Apple, etc.), IGNORE the ML model's prediction. Identify the correct crop and its disease from the image yourself, and return that in your JSON response.`;
+    const promptText = `The local ML model predicted this crop image belongs to the class: "${diseaseName}".
+The ML model is trained on 14 crop disease superclasses: Cotton Disease, Cotton Pest, Cotton Healthy, Wheat Disease, Wheat Healthy, Rice Disease, Maize Disease, Maize Healthy, Sugarcane Disease, Sugarcane Healthy, Tomato Disease, Tomato Healthy, Potato Disease, Potato Healthy.
+Please look at the attached image to verify this prediction.
+If the prediction looks correct, provide precise treatment for that disease.
+If the ML model seems wrong (e.g., the image clearly shows a different crop), identify the correct crop and disease yourself and provide appropriate treatment.
+Always return the specific disease name, not just the superclass.`;
 
     const geminiResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
