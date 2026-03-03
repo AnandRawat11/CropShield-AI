@@ -6,12 +6,11 @@ const FormData = require('form-data');
  * imageUrl = Cloudinary URL
  */
 const callAI = async (imageUrl) => {
-  // Initialize Gemini SDK
-  // Note: Requires GEMINI_API_KEY in process.env
   const ai = new GoogleGenAI({});
 
   try {
-    // 1️⃣ Get Image Buffer (Handle both local disk paths and Cloudinary URLs)
+    // 1️⃣ Get Image Buffer from Cloudinary URL
+    console.log("[aiService] Step 1: Fetching image from:", imageUrl);
     let imageBuffer;
     if (imageUrl.startsWith("http")) {
       const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
@@ -20,6 +19,7 @@ const callAI = async (imageUrl) => {
       const fs = require('fs');
       imageBuffer = fs.readFileSync(imageUrl);
     }
+    console.log("[aiService] Step 1 OK: Image fetched, size:", imageBuffer.length);
 
     const formData = new FormData();
     formData.append("image", imageBuffer, {
@@ -27,7 +27,6 @@ const callAI = async (imageUrl) => {
       contentType: "image/jpeg"
     });
 
-    // Node.js form-data requires explicit stream length when passed via Axios
     const contentLength = await new Promise((resolve, reject) => {
       formData.getLength((err, length) => {
         if (err) return reject(err);
@@ -35,8 +34,10 @@ const callAI = async (imageUrl) => {
       });
     });
 
-    // 2️⃣ Call Python Machine Learning Model (Render in prod, localhost in dev)
+    // 2️⃣ Call Python ML Model on Render
     const AI_API_URL = process.env.AI_API_URL || "http://127.0.0.1:8000";
+    console.log("[aiService] Step 2: Calling AI API at:", AI_API_URL + "/predict");
+
     const pythonResponse = await axios.post(
       `${AI_API_URL}/predict`,
       formData,
@@ -45,28 +46,28 @@ const callAI = async (imageUrl) => {
           ...formData.getHeaders(),
           "Content-Length": contentLength
         },
-        timeout: 60000  // 60s timeout — Render free tier may be cold-starting
+        timeout: 60000  // 60s — Render free tier may cold-start
       }
     );
 
     const pythonResult = pythonResponse.data;
-    console.log("Python ML Result:", pythonResult);
+    console.log("[aiService] Step 2 OK — Python ML Result:", pythonResult);
 
     const isPlant = pythonResult.disease && !pythonResult.disease.includes("Not a Plant");
 
-    // 3️⃣ If the local model says it's not a plant or has low confidence, return immediately
-    // to save on unnecessary Gemini API calls.
+    // 3️⃣ Return early if not a plant or low confidence
     if (!isPlant || pythonResult.confidence < 0.2 || pythonResult.disease.includes("Healthy")) {
       return {
         disease: pythonResult.disease,
         confidence: pythonResult.confidence,
         is_plant: isPlant,
-        treatment: null // No treatment needed or possible
+        treatment: null
       };
     }
 
-    // 4️⃣ If disease is detected, ask Gemini to act as an Agricultural Expert for the Treatment Plan
+    // 4️⃣ Call Gemini for treatment plan
     const diseaseName = pythonResult.disease.replace(/___/g, " - ").replace(/_/g, " ");
+    console.log("[aiService] Step 3: Calling Gemini for disease:", diseaseName);
 
     const systemInstruction = `
       You are an expert Agricultural Pathologist.
@@ -86,8 +87,6 @@ const callAI = async (imageUrl) => {
         }
       }
     `;
-
-    console.log(`[aiService] About to call Gemini for disease: ${diseaseName}`);
 
     const base64Image = imageBuffer.toString("base64");
     const promptText = `The local ML model predicted this crop image belongs to the class: "${diseaseName}".
@@ -119,36 +118,35 @@ Always return the specific disease name, not just the superclass.`;
       }
     });
 
-    console.log(`[aiService] Gemini request finished successfully!`);
+    console.log("[aiService] Step 3 OK: Gemini responded");
     const geminiText = geminiResponse.text;
-    console.log("Raw Gemini Text:", geminiText);
 
     let geminiResult = { treatment: { message: "AI Treatment generation failed." } };
     try {
-      // Strip markdown codeblocks just in case Gemini ignored the prompt
       const cleanText = geminiText.replace(/```json/g, "").replace(/```/g, "").trim();
       geminiResult = JSON.parse(cleanText);
     } catch (parseError) {
-      console.error("Failed to parse Gemini JSON. Raw output was:", geminiText);
+      console.error("[aiService] Failed to parse Gemini JSON:", geminiText);
     }
 
-    console.log("Gemini Treatment Result:", geminiResult);
-
-    // 5️⃣ Merge Local ML Disease Prediction with Gemini Treatment Generation
-    // If Gemini identified a different crop, override the disease name.
     const finalDiseaseName = geminiResult.disease || pythonResult.disease;
 
     return {
       disease: finalDiseaseName,
       confidence: pythonResult.confidence,
       is_plant: pythonResult.is_plant,
-      treatment: geminiResult.treatment || geminiResult // some models wrap it differently
+      treatment: geminiResult.treatment || geminiResult
     };
 
   } catch (error) {
-    console.error("Hybrid AI Pipeline Error Message:", error.message);
+    // Log the FULL error so we can see exactly where it failed
+    console.error("[aiService] ❌ PIPELINE FAILED at step:");
+    console.error("  Message:", error.message);
+    console.error("  Code:", error.code);
+    console.error("  Stack:", error.stack?.split('\n')[1]);
     if (error.response) {
-      console.error("HTTP Response Error Data:", error.response.data);
+      console.error("  HTTP Status:", error.response.status);
+      console.error("  HTTP Data:", JSON.stringify(error.response.data));
     }
     throw new Error("Failed to process image with the Hybrid ML+AI pipeline");
   }
