@@ -6,7 +6,8 @@ const connectDB = async () => {
     console.log("MongoDB Connected");
   } catch (error) {
     console.error("MongoDB Connection Failed:", error.message);
-    process.exit(1);
+    // Do NOT exit — let the server stay up so Render detects the open port.
+    // API routes that need DB will fail gracefully instead of crashing everything.
   }
 };
 
