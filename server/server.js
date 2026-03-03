@@ -8,11 +8,10 @@ const diseaseRoutes = require("./routes/diseaseRoutes");
 
 const app = express();
 
-// CORS — allow frontend origins
-// FRONTEND_URL env var can be a comma-separated list of allowed origins
+// CORS — allow all Vercel preview URLs + explicit origins from FRONTEND_URL env var
 const allowedOrigins = [
-  "http://localhost:5173",   // local Vite dev server
-  "http://localhost:4173",   // local Vite preview
+  "http://localhost:5173",
+  "http://localhost:4173",
 ];
 if (process.env.FRONTEND_URL) {
   process.env.FRONTEND_URL.split(",").forEach((url) =>
@@ -23,12 +22,16 @@ if (process.env.FRONTEND_URL) {
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (Postman, curl, server-to-server)
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow: no origin (Postman/curl), localhost, known Vercel URLs, or explicit list
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        /\.vercel\.app$/.test(origin)   // allow ANY vercel.app subdomain
+      ) {
         callback(null, true);
       } else {
-        console.warn(`CORS blocked request from: ${origin}`);
-        callback(new Error("Not allowed by CORS"));
+        console.warn(`CORS blocked: ${origin}`);
+        callback(null, false); // return false, NOT an Error — avoids 500
       }
     },
     credentials: true,
@@ -53,6 +56,6 @@ connectDB().then(() => {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    console.log(`Allowed CORS origins: ${allowedOrigins.join(", ")}`);
+    console.log(`Allowed CORS origins: ${allowedOrigins.join(", ")} + *.vercel.app`);
   });
 });
