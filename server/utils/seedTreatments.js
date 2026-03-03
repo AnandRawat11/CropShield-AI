@@ -70,6 +70,16 @@ const treatments = [
         organic: "Remove lower infected leaves and mulch the soil.",
         prevention: "Stake plants to improve air circulation."
     },
+    {
+        crop: "Tomato",
+        disease: "Tomato - Late blight",
+        chemical: {
+            name: "Mancozeb 75% WP",
+            dose: "2 kg/ha"
+        },
+        organic: "Apply copper-based fungicides or compost tea.",
+        prevention: "Destroy volunteer tomato/potato plants and ensure good drainage."
+    },
 
     // Rice (Common Indian Crop)
     {

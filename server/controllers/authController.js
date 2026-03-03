@@ -86,7 +86,7 @@ exports.upgradeToPremium = async (req, res) => {
     }
 
     // 🔥 ONLY UPDATE PLAN FIELDS
-    user.plan = "Premium";
+    user.plan = "PREMIUM";
     user.dailyLimit = 9999;      // simulate unlimited
     user.remainingScans = 9999;
 

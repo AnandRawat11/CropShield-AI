@@ -1,7 +1,57 @@
+# ─── Python Virtual Environment ──────────────────────────────────────────────
 venv/
-node_modules/
+ai-api/venv/
 __pycache__/
+ai-api/**/__pycache__/
 *.pyc
-.env
+*.pyo
+
+# ─── Datasets (large — never push to GitHub) ─────────────────────────────────
 ai-api/dataset/
+ai-api/dataset_merged/
+
+# ─── Trained Model Files (too large for GitHub) ───────────────────────────────
+ai-api/model/*.h5
+ai-api/model/*.keras
+ai-api/model/*.pb
+ai-api/model/training_curves.png
+ai-api/model/confusion_matrix.png
+ai-api/model/per_class_f1.png
+# Keep class_indices.json and training history CSVs (small and useful)
+!ai-api/model/class_indices.json
+!ai-api/model/history_phase1.csv
+!ai-api/model/history_phase2.csv
+
+# ─── Node.js ─────────────────────────────────────────────────────────────────
+node_modules/
+client/node_modules/
+server/node_modules/
+npm-debug.log*
+yarn-debug.log*
+
+# ─── Environment Variables (NEVER push secrets) ───────────────────────────────
+.env
+.env.local
+.env.production
+server/.env
+ai-api/.env
+
+# ─── Build Output ─────────────────────────────────────────────────────────────
+client/dist/
+client/build/
+
+# ─── macOS System Files ───────────────────────────────────────────────────────
 .DS_Store
+**/.DS_Store
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── IDE Files ────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+
+# ─── Misc ─────────────────────────────────────────────────────────────────────
+futurePlans.txt

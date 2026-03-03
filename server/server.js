@@ -19,8 +19,6 @@ app.use((req, res, next) => {
   next();
 });
 
-connectDB();
-
 app.get("/", (req, res) => {
   res.send("Backend working");
 });
@@ -29,8 +27,9 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/disease", diseaseRoutes);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log("MongoDB Connected");
-  console.log(`Server running on port ${PORT}`);
+connectDB().then(() => {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 });

@@ -21,9 +21,17 @@ const detectDisease = async (req, res) => {
     // Call AI Model
     const aiResult = await callAI(imageUrl);
 
-    // Severity logic
+    // Initial severity logic
     let severity = "Low";
-    if (aiResult.disease.toLowerCase().includes("healthy")) {
+    let diseaseName = aiResult.disease;
+
+    // Handle Non-Plant or Unknown
+    if (aiResult.is_plant === false || diseaseName.includes("Not a Plant")) {
+      severity = "None"; // Or "Low", depending on whether we want to alarm the user
+      diseaseName = "Not a Crop / " + (diseaseName.split("(")[1]?.replace(")", "") || "Unknown");
+    } else if (diseaseName.includes("Unknown")) {
+      severity = "Low";
+    } else if (diseaseName.toLowerCase().includes("healthy")) {
       severity = "None";
     } else if (aiResult.confidence > 0.85) {
       severity = "High";
@@ -32,26 +40,24 @@ const detectDisease = async (req, res) => {
     }
 
     // Trim and clean name
-    const cleanName = formatDiseaseName(aiResult.disease).trim();
+    const cleanName = formatDiseaseName(diseaseName).trim();
 
-    // Fetch treatment only if disease (not healthy)
+    // Fetch treatment only if disease (not healthy and not non-plant)
     let treatment = null;
-    if (severity !== "None") {
-      // Case-insensitive search
-      treatment = await Treatment.findOne({
-        disease: { $regex: new RegExp(`^${cleanName}$`, "i") }
-      });
-
-      if (!treatment) {
-        treatment = { message: "Treatment data not available yet" };
-      }
+    if (severity !== "None" && !cleanName.includes("Not a Crop")) {
+      // Use the dynamically generated AI treatment plan
+      treatment = aiResult.treatment || { message: "Treatment data not available yet" };
+    } else if (cleanName.includes("Not a Crop")) {
+      treatment = { message: "Please upload a valid crop leaf image." };
+    } else if (severity === "None") {
+      treatment = { message: "Your crop looks healthy! No treatment is required. Keep up the good work! 🌾" };
     }
 
     // Save to History
     await DiseaseRecord.create({
       user: req.user.id,
       imageUrl,
-      disease: formatDiseaseName(aiResult.disease),
+      disease: cleanName,
       confidence: aiResult.confidence,
       severity
     });
@@ -59,7 +65,7 @@ const detectDisease = async (req, res) => {
     res.json({
       imageUrl,
       disease: {
-        disease: formatDiseaseName(aiResult.disease),
+        disease: cleanName,
         confidence: Number(aiResult.confidence.toFixed(3)),
         severity
       },
