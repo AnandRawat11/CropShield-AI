@@ -35,16 +35,17 @@ const callAI = async (imageUrl) => {
       });
     });
 
-    // 2️⃣ Call Local Python Machine Learning Model
+    // 2️⃣ Call Python Machine Learning Model (Render in prod, localhost in dev)
+    const AI_API_URL = process.env.AI_API_URL || "http://127.0.0.1:8000";
     const pythonResponse = await axios.post(
-      "http://127.0.0.1:8000/predict",
+      `${AI_API_URL}/predict`,
       formData,
       {
         headers: {
           ...formData.getHeaders(),
           "Content-Length": contentLength
         },
-        timeout: 15000
+        timeout: 60000  // 60s timeout — Render free tier may be cold-starting
       }
     );
 
