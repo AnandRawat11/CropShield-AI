@@ -1,150 +1,214 @@
-🌾 CropShield AI – Crop Disease Detection System
+# 🌾 CropShield AI — Crop Disease Detection System
 
-AI-powered web application that detects crop diseases from leaf images and provides treatment recommendations using deep learning.
+> An AI-powered web application that detects crop diseases from leaf images and provides actionable treatment recommendations using deep learning.
 
-⸻
+![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20Node.js%20%7C%20Python%20%7C%20TensorFlow-green)
+![Model](https://img.shields.io/badge/Model-EfficientNetB0%20%7C%2096.77%25%20Accuracy-blue)
+![Classes](https://img.shields.io/badge/Classes-14%20Superclasses-orange)
 
-🔍 Overview
+---
 
-CropShield AI is a full-stack AI system built to assist farmers and agricultural stakeholders in early disease detection. The platform classifies leaf images into 17 disease/healthy categories across 5 major crops and returns actionable treatment suggestions.
+## 📖 Table of Contents
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Model Performance](#model-performance)
+- [Project Structure](#project-structure)
+- [Local Setup (Windows)](#local-setup-windows)
+- [Local Setup (Mac/Linux)](#local-setup-maclinux)
+- [Environment Variables](#environment-variables)
+- [Dataset](#dataset)
+- [Future Scope](#future-scope)
 
-⸻
+---
 
-🧠 Key Highlights
-	•	17-class image classification model
-	•	Supports Corn, Potato, Rice, Wheat, Sugarcane
-	•	Deep learning-based prediction with confidence score
-	•	REST API architecture
-	•	Secure user authentication (JWT)
-	•	Cloud-ready deployment structure
+## 🔍 Overview
 
-⸻
+CropShield AI uses a two-layer AI pipeline:
 
-🛠 Tech Stack
+1. **EfficientNetB0 ML Model** — classifies the leaf image into one of 14 crop disease superclasses with 96.77% validation accuracy
+2. **Google Gemini Vision** — verifies the ML result visually and generates a detailed treatment plan (organic, chemical, prevention)
 
-Frontend: React, Vite, Tailwind CSS
-Backend: Node.js, Express.js, MongoDB
-AI Service: Python, FastAPI, TensorFlow
+**Supported Crops:** Cotton · Wheat · Rice · Maize · Sugarcane · Tomato · Potato
 
-⸻
+---
 
-📊 Dataset
+## 🛠 Tech Stack
 
-Trained on labeled RGB leaf images across:
-	•	Corn (Rust, Leaf Spot, Blight, Healthy)
-	•	Potato (Early/Late Blight, Healthy)
-	•	Rice (Brown Spot, Blast variants, Healthy)
-	•	Wheat (Rust variants, Healthy)
-	•	Sugarcane (Red Rot, Bacterial Blight, Healthy)
+| Layer | Technology |
+|---|---|
+| **Frontend** | React 18, Vite, Tailwind CSS, Framer Motion |
+| **Backend** | Node.js, Express.js, MongoDB, JWT Auth |
+| **ML API** | Python, FastAPI, TensorFlow / Keras |
+| **AI** | Google Gemini 2.5 Flash (Vision) |
+| **Storage** | Cloudinary (image uploads) |
 
-Total Classes: 17
+---
 
-⸻
+## 📊 Model Performance
 
-🚀 How It Works
-	1.	User uploads leaf image
-	2.	Image sent to AI microservice
-	3.	Model predicts disease class
-	4.	Backend returns diagnosis + treatment recommendation
+| Metric | Score |
+|---|---|
+| Validation Accuracy | **96.77%** |
+| Macro F1 Score | **91.80%** |
+| Weighted F1 Score | **96.73%** |
 
-⸻
+**Architecture:** EfficientNetB0 (pretrained ImageNet) + custom classification head  
+**Training:** 2-phase fine-tuning with Focal Loss, AdamW, EarlyStopping, and balanced class weights  
+**Dataset:** 19,000+ images merged into 14 biological superclasses
 
-📌 Future Scope
-	•	Mobile application
-	•	Real-time field integration
-	•	Model retraining with live agricultural data
-	•	Multi-language support
+---
 
-⸻
-Guide to run this application locally
-Step-by-Step Windows Setup
-Prerequisites — Install these first
-Node.js 20+ — download the Windows installer
-Python 3.11 — ✅ check "Add to PATH" during install
-MongoDB Community — install and start the service
-Git for Windows (optional but helpful)
-Step 1 — Extract the ZIP
-Extract it anywhere, e.g. C:\CropShield-AI\
+## � Project Structure
 
-Step 2 — Create the .env file
-Inside C:\CropShield-AI\server\ create a new file called .env (no extension):
-
-```env
-MONGO_URI=mongodb://127.0.0.1:27017/cropshield
-JWT_SECRET=your_random_jwt_secret_here
-PORT=5001
-CLOUDINARY_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-GEMINI_API_KEY=your_gemini_api_key
+```
+CropShield-AI/
+├── client/          # React frontend (Vite)
+├── server/          # Node.js + Express backend
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   └── services/    # Gemini AI integration
+├── ai-api/          # Python FastAPI ML microservice
+│   ├── app.py
+│   ├── predict.py
+│   ├── train_model.py
+│   ├── evaluate_model.py
+│   ├── restructure_dataset.py
+│   └── model/       # .h5 model + class_indices.json
+├── start_all.bat    # Windows launcher
+└── start_all.sh     # Mac/Linux launcher
 ```
 
-> 💡 Get your keys from:
-> - **Cloudinary:** [cloudinary.com](https://cloudinary.com) → Dashboard
-> - **Gemini:** [aistudio.google.com](https://aistudio.google.com) → Get API Key
+---
 
-Step 3 — Copy the Model File
-Copy crop_disease_model_fixed.h5 and class_indices.json from your Mac to the Windows laptop into:
+## 💻 Local Setup (Windows)
 
-C:\CropShield-AI\ai-api\model\
-You can transfer via USB drive, Google Drive, or AirDrop to an Android phone then to PC.
+### Prerequisites
+- [Node.js 20+](https://nodejs.org)
+- [Python 3.11](https://python.org/downloads) — check ✅ **"Add to PATH"**
+- [MongoDB Community](https://www.mongodb.com/try/download/community)
 
-Step 4 — Install Node.js dependencies
-Open Command Prompt or PowerShell:
+### Steps
 
-cmd
-cd C:\CropShield-AI\server
-npm install
-cd C:\CropShield-AI\client
-npm install
-Step 5 — Set up Python virtual environment
-cmd
+**1. Extract the project ZIP** anywhere, e.g. `C:\CropShield-AI\`
+
+**2. Create `server/.env`** — see [Environment Variables](#environment-variables)
+
+**3. Copy the model files** into `ai-api/model/`:
+- `crop_disease_model_fixed.h5`
+- `class_indices.json`
+
+**4. Install dependencies**
+```cmd
+cd C:\CropShield-AI\server && npm install
+cd C:\CropShield-AI\client && npm install
+```
+
+**5. Set up Python environment**
+```cmd
 cd C:\CropShield-AI\ai-api
 python -m venv venv
 venv\Scripts\activate
 pip install tensorflow fastapi uvicorn python-multipart pillow
-Step 6 — Run all 3 services (open 3 separate terminal windows)
-Terminal 1 — Python ML API:
+```
 
-cmd
-cd C:\CropShield-AI\ai-api
-venv\Scripts\activate
-uvicorn app:app --reload --port 8000
-Terminal 2 — Node.js Backend:
+**6. Launch everything**
 
-cmd
-cd C:\CropShield-AI\server
-node server.js
-Terminal 3 — React Frontend:
+Double-click `start_all.bat` — it opens 3 terminal windows automatically.
 
-cmd
-cd C:\CropShield-AI\client
-npm run dev
-Step 7 — Open the App
-Go to http://localhost:5173 in your browser.
+Or manually in 3 separate terminals:
+```cmd
+# Terminal 1 – ML API
+cd ai-api && venv\Scripts\activate && uvicorn app:app --reload --port 8000
 
-⚠️ Note: start_all.sh is a Mac/Linux bash script and won't work on Windows. Use the 3 separate terminal commands above instead. If you want a Windows equivalent, I can create a start_all.bat batch file for you.
+# Terminal 2 – Backend
+cd server && node server.js
 
-create a start_all.bat batch file
+# Terminal 3 – Frontend
+cd client && npm run dev
+```
 
-Created
-+53
--0
-Done! Created 
+**7. Open** → [http://localhost:5173](http://localhost:5173)
 
-start_all.bat
- at the root of the project. Here's what it does:
+---
 
-✅ Auto-starts MongoDB — checks if it's running, starts it if not
-✅ Opens 3 separate named terminal windows — one for each service, so you can see logs independently
-✅ Uses %~dp0 — works from any folder path, no hardcoded C:\ needed
-✅ Shows a summary with all URLs after launching
-How to use on Windows:
+## 🍎 Local Setup (Mac/Linux)
 
-Double-click start_all.bat
-Wait ~10 seconds for all services to boot
-Open http://localhost:5173
-👨‍💻 Author
+```bash
+# Install dependencies
+cd server && npm install
+cd ../client && npm install
 
-Anand Rawat
+# Python setup
+cd ../ai-api
+python3 -m venv venv
+source venv/bin/activate
+pip install tensorflow fastapi uvicorn python-multipart pillow
+
+# Start everything
+cd ..
+chmod +x start_all.sh && ./start_all.sh
+```
+
+---
+
+## 🔑 Environment Variables
+
+Create a file at `server/.env`:
+
+```env
+# Database
+MONGO_URI=mongodb://127.0.0.1:27017/cropshield
+
+# Auth
+JWT_SECRET=your_random_jwt_secret_here
+PORT=5001
+
+# Cloudinary (image storage) — get from cloudinary.com/console
+CLOUDINARY_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+
+# Google Gemini AI — get from aistudio.google.com
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+> ⚠️ Never commit real API keys to GitHub. The `.env` file is in `.gitignore`.
+
+---
+
+## 📦 Dataset
+
+The dataset is **not included** in this repository (too large for GitHub).
+
+- 19,000+ labeled leaf images
+- 46 original classes merged into **14 biological superclasses**
+
+> 📥 Download link will be added soon (Kaggle).
+
+To retrain the model yourself:
+```bash
+cd ai-api
+python restructure_dataset.py   # Merge 46 → 14 superclasses
+python train_model.py           # Train EfficientNetB0
+python evaluate_model.py        # Evaluate + generate charts
+```
+
+---
+
+## 🔮 Future Scope
+
+- 📱 Mobile application (React Native)
+- 🌦️ Disease spread prediction using weather APIs
+- 🗺️ Region-wise outbreak heatmap
+- 💰 Cost-to-treat vs crop loss prediction
+- 🌍 Multi-language support for rural farmers
+
+---
+
+## 👨‍💻 Author
+
+**Anand Rawat**  
 B.Tech CSE (AI & Data Science)
+
+[![GitHub](https://img.shields.io/badge/GitHub-AnandRawat11-black?logo=github)](https://github.com/AnandRawat11)
