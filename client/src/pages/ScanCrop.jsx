@@ -8,6 +8,7 @@ function ScanCrop() {
     const [preview, setPreview] = useState(null);
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [loadingMsg, setLoadingMsg] = useState("Analyzing...");
     const [error, setError] = useState("");
 
     // Cleanup preview URL on unmount
@@ -34,21 +35,34 @@ function ScanCrop() {
         formData.append("image", image);
 
         setLoading(true);
+        setLoadingMsg("Analyzing...");
         setError("");
         setResult(null);
+
+        // Escalate the loading message so users know about cold-start waits
+        const msgTimer = setInterval(() => {
+            setLoadingMsg((prev) => {
+                if (prev === "Analyzing...") return "Warming up AI server...";
+                if (prev === "Warming up AI server...") return "First request takes ~60s on cold start. Please wait...";
+                return prev;
+            });
+        }, 10000); // escalate every 10s
 
         try {
             const res = await detectDisease(formData);
             setResult(res.data);
         } catch (err) {
             console.error("Scan Error:", err);
+            const msg = err.response?.data?.error || err.message || "";
             setError(
-                err.response?.data?.error ||
-                err.message ||
-                "Failed to analyze image. Please try again."
+                msg.includes("cold-start") || msg.includes("AI API did not become")
+                    ? "The AI server is still waking up. Please wait 30 seconds and try again."
+                    : msg || "Failed to analyze image. Please try again."
             );
         } finally {
+            clearInterval(msgTimer);
             setLoading(false);
+            setLoadingMsg("Analyzing...");
         }
     };
 
@@ -142,7 +156,8 @@ function ScanCrop() {
                         >
                             {loading ? (
                                 <>
-                                    <Loader2 className="animate-spin" /> Analyzing...
+                                    <Loader2 className="animate-spin" />
+                                    <span className="text-sm">{loadingMsg}</span>
                                 </>
                             ) : (
                                 <>
@@ -180,10 +195,10 @@ function ScanCrop() {
                                                     <CheckCircle className="text-emerald-400" /> Analysis Result
                                                 </h2>
                                                 <span className={`px-4 py-1.5 rounded-full text-sm font-bold border ${result.disease.severity === "High"
-                                                        ? "bg-red-500/20 text-red-400 border-red-500/30"
-                                                        : result.disease.severity === "Medium"
-                                                            ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-                                                            : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                                                    ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                                    : result.disease.severity === "Medium"
+                                                        ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                                                        : "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
                                                     }`}>
                                                     {result.disease.severity} Severity
                                                 </span>

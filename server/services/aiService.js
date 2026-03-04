@@ -34,46 +34,60 @@ const callAI = async (imageUrl) => {
       });
     });
 
-    // 2️⃣ Call Python ML Model on Render (with retry for cold-start 502)
+    // 2️⃣ Call Python ML Model on Render
     const AI_API_URL = process.env.AI_API_URL || "http://127.0.0.1:8000";
     console.log("[aiService] Step 2: Calling AI API at:", AI_API_URL + "/predict");
 
+    // Check GEMINI key is present early so bad env is caught in logs
+    if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
+      console.warn("[aiService] ⚠️  GEMINI_API_KEY / GOOGLE_API_KEY not found in env — Gemini step will fail!");
+    }
+
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-    // Pre-warm ping — kick Render awake before sending the heavy POST
-    try {
-      console.log("[aiService] Step 2a: Pre-warm ping to AI API...");
-      await axios.get(`${AI_API_URL}/health`, { timeout: 10000 });
-      console.log("[aiService] Step 2a OK: AI API already warm.");
-    } catch (_) {
-      console.log("[aiService] Step 2a: AI API cold — waiting 25s for warm-up...");
-      await sleep(25000); // give Render time to load the ML model
-    }
+    // --- Smart warm-up: poll /health every 5s until alive (max 75s) ---
+    // This beats the fixed-sleep approach because:
+    //   • If API is already warm, we skip the wait entirely
+    //   • If cold, we detect exactly when it's ready (30–60s on Render free tier)
+    const WARM_UP_LIMIT_MS = 75000;
+    const POLL_INTERVAL_MS = 5000;
+    const warmStart = Date.now();
+    let apiAlive = false;
 
-    let pythonResponse;
-    const MAX_ATTEMPTS = 5;
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    console.log("[aiService] Step 2a: Polling AI API health until alive (max 75s)...");
+    while (Date.now() - warmStart < WARM_UP_LIMIT_MS) {
       try {
-        pythonResponse = await axios.post(
-          `${AI_API_URL}/predict`,
-          formData,
-          {
-            headers: { ...formData.getHeaders(), "Content-Length": contentLength },
-            timeout: 120000  // 120s timeout — model load can be slow on cold start
-          }
-        );
-        break; // success — exit retry loop
-      } catch (retryErr) {
-        const status = retryErr.response?.status;
-        const isRetryable = status === 502 || status === 503 || status === 504 || !status;
-        if (isRetryable && attempt < MAX_ATTEMPTS) {
-          console.log(`[aiService] AI API returned ${status || 'no response'} (cold start). Retrying in 20s... (attempt ${attempt}/${MAX_ATTEMPTS})`);
-          await sleep(20000);
-        } else {
-          throw retryErr; // give up after MAX_ATTEMPTS
-        }
+        await axios.get(`${AI_API_URL}/health`, { timeout: 8000 });
+        apiAlive = true;
+        console.log(`[aiService] Step 2a OK: AI API alive after ${Math.round((Date.now() - warmStart) / 1000)}s`);
+        break;
+      } catch (_) {
+        const elapsed = Math.round((Date.now() - warmStart) / 1000);
+        console.log(`[aiService] Still waiting for AI API... (${elapsed}s elapsed)`);
+        await sleep(POLL_INTERVAL_MS);
       }
     }
+
+    if (!apiAlive) {
+      throw new Error("AI API did not become available within 75 seconds (Render cold-start timeout)");
+    }
+
+    // --- Single predict call (API is confirmed alive) ---
+    let pythonResponse;
+    try {
+      pythonResponse = await axios.post(
+        `${AI_API_URL}/predict`,
+        formData,
+        {
+          headers: { ...formData.getHeaders(), "Content-Length": contentLength },
+          timeout: 120000  // 120s — generous buffer after API is confirmed alive
+        }
+      );
+    } catch (predictErr) {
+      console.error("[aiService] /predict failed:", predictErr.message);
+      throw predictErr;
+    }
+
 
     const pythonResult = pythonResponse.data;
     console.log("[aiService] Step 2 OK — Python ML Result:", pythonResult);
