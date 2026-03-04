@@ -50,6 +50,7 @@ app.get("/", (req, res) => {
 });
 
 app.use(express.json());
+
 app.use("/api/auth", authRoutes);
 app.use("/api/disease", diseaseRoutes);
 
