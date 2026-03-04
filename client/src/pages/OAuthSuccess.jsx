@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Leaf } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import API from "../services/api";
 
 const OAuthSuccess = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -51,14 +52,14 @@ const OAuthSuccess = () => {
 
                 {error ? (
                     <div className="text-center">
-                        <h2 className="text-xl font-bold text-red-600 mb-2">Authentication Error</h2>
+                        <h2 className="text-xl font-bold text-red-600 mb-2">{t("oauth.errorTitle")}</h2>
                         <p className="text-gray-600">{error}</p>
-                        <p className="text-sm text-gray-500 mt-4">Redirecting back to login...</p>
+                        <p className="text-sm text-gray-500 mt-4">{t("oauth.redirecting")}</p>
                     </div>
                 ) : (
                     <div className="text-center">
-                        <h2 className="text-xl font-bold text-gray-800 mb-2">Authenticating</h2>
-                        <p className="text-gray-600">Please wait while we log you in...</p>
+                        <h2 className="text-xl font-bold text-gray-800 mb-2">{t("oauth.authenticating")}</h2>
+                        <p className="text-gray-600">{t("oauth.pleaseWait")}</p>
                     </div>
                 )}
             </div>

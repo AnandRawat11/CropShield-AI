@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Leaf } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { registerUser } from "../services/api";
 
 /* ── shared input wrapper — defined OUTSIDE Register so React never remounts it ── */
@@ -48,6 +49,7 @@ const Field = ({ label, name, type, placeholder, showToggle, show, onToggle, for
 
 const Register = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -124,12 +126,12 @@ const Register = () => {
 
         {/* Brand name */}
         <h1 className="text-center text-[1.6rem] font-extrabold text-gray-900 mb-1 tracking-tight">
-          CropShield <span style={{ color: "#3ED500" }}>AI</span>
+          {t("register.title")}
         </h1>
 
         {/* Tagline */}
         <p className="text-center text-sm text-gray-500 mb-8">
-          Create your free account and start protecting crops
+          {t("register.tagline")}
         </p>
 
         {/* Error banner */}
@@ -142,28 +144,28 @@ const Register = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
 
           <Field
-            label="Full Name"
+            label={t("register.fullName")}
             name="name"
             type="text"
-            placeholder="John Farmer"
+            placeholder={t("register.fullNamePlaceholder")}
             formData={formData}
             onChange={handleChange}
           />
 
           <Field
-            label="Email Address"
+            label={t("register.email")}
             name="email"
             type="email"
-            placeholder="farmer@example.com"
+            placeholder={t("register.emailPlaceholder")}
             formData={formData}
             onChange={handleChange}
           />
 
           <Field
-            label="Password"
+            label={t("register.password")}
             name="password"
             type="password"
-            placeholder="Min. 8 characters"
+            placeholder={t("register.passwordPlaceholder")}
             showToggle
             show={showPassword}
             onToggle={() => setShowPassword((p) => !p)}
@@ -172,10 +174,10 @@ const Register = () => {
           />
 
           <Field
-            label="Confirm Password"
+            label={t("register.confirmPassword")}
             name="confirmPassword"
             type="password"
-            placeholder="Re-enter password"
+            placeholder={t("register.confirmPasswordPlaceholder")}
             showToggle
             show={showConfirm}
             onToggle={() => setShowConfirm((p) => !p)}
@@ -190,8 +192,8 @@ const Register = () => {
             className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3.5 rounded-lg transition-opacity disabled:opacity-60 disabled:cursor-not-allowed text-[15px] mt-2"
             style={{ background: "#3ED500" }}
           >
-            {loading ? "Creating account…" : (
-              <>Create Account <ArrowRight className="w-4 h-4" /></>
+            {loading ? t("register.creatingAccount") : (
+              <>{t("register.createAccount")} <ArrowRight className="w-4 h-4" /></>
             )}
           </button>
         </form>
@@ -200,7 +202,7 @@ const Register = () => {
         <div className="flex items-center gap-3 my-6">
           <div className="flex-1 h-px bg-gray-200" />
           <span className="text-[11px] text-gray-400 uppercase tracking-widest font-medium whitespace-nowrap">
-            or continue with
+            {t("register.orContinueWith")}
           </span>
           <div className="flex-1 h-px bg-gray-200" />
         </div>
@@ -220,7 +222,7 @@ const Register = () => {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            Google
+            {t("register.google")}
           </button>
 
           <button className="flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition text-sm font-medium text-gray-700">
@@ -228,19 +230,19 @@ const Register = () => {
               <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.15-2.2 1.3-2.18 3.87.03 3.02 2.65 4.03 2.68 4.04l-.05.21z" />
               <path d="M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
             </svg>
-            Apple
+            {t("register.apple")}
           </button>
         </div>
 
         {/* Sign-in link */}
         <p className="text-center text-sm text-gray-500 mt-6">
-          Already have an account?{" "}
+          {t("register.alreadyHaveAccount")}{" "}
           <button
             onClick={() => navigate("/login")}
             className="font-medium hover:underline"
             style={{ color: "#3ED500" }}
           >
-            Sign in
+            {t("register.signIn")}
           </button>
         </p>
       </div>

@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Ensure Devanagari characters render properly for Hindi and Marathi */
+body {
+  font-family: 'Inter', 'Noto Sans Devanagari', sans-serif;
+}

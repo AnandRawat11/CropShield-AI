@@ -4,12 +4,13 @@ const FormData = require('form-data');
 
 /**
  * imageUrl = Cloudinary URL
+ * lang = "en" | "hi" | "mr"
  */
-const callAI = async (imageUrl) => {
+const callAI = async (imageUrl, lang = "en") => {
   const ai = new GoogleGenAI({});
 
   try {
-    // 1️⃣ Get Image Buffer from Cloudinary URL
+    // 1️⃣ Fetch image
     console.log("[aiService] Step 1: Fetching image from:", imageUrl);
     let imageBuffer;
     if (imageUrl.startsWith("http")) {
@@ -22,10 +23,7 @@ const callAI = async (imageUrl) => {
     console.log("[aiService] Step 1 OK: Image fetched, size:", imageBuffer.length);
 
     const formData = new FormData();
-    formData.append("image", imageBuffer, {
-      filename: "image.jpg",
-      contentType: "image/jpeg"
-    });
+    formData.append("image", imageBuffer, { filename: "image.jpg", contentType: "image/jpeg" });
 
     const contentLength = await new Promise((resolve, reject) => {
       formData.getLength((err, length) => {
@@ -34,45 +32,35 @@ const callAI = async (imageUrl) => {
       });
     });
 
-    // 2️⃣ Call Python ML Model on Render
+    // 2️⃣ Warm-up poll then call Python ML model
     const AI_API_URL = process.env.AI_API_URL || "http://127.0.0.1:8000";
     console.log("[aiService] Step 2: Calling AI API at:", AI_API_URL + "/predict");
 
-    // Check GEMINI key is present early so bad env is caught in logs
     if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
-      console.warn("[aiService] ⚠️  GEMINI_API_KEY / GOOGLE_API_KEY not found in env — Gemini step will fail!");
+      console.warn("[aiService] ⚠️  GEMINI_API_KEY / GOOGLE_API_KEY not found in env!");
     }
 
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-    // --- Smart warm-up: poll /health every 5s until alive (max 75s) ---
-    // This beats the fixed-sleep approach because:
-    //   • If API is already warm, we skip the wait entirely
-    //   • If cold, we detect exactly when it's ready (30–60s on Render free tier)
-    const WARM_UP_LIMIT_MS = 120000;  // 120s — confirmed cold-start takes >90s on Render free tier
+    const WARM_UP_LIMIT_MS = 120000;
     const POLL_INTERVAL_MS = 5000;
     const warmStart = Date.now();
     let apiAlive = false;
 
-    console.log("[aiService] Step 2a: Polling AI API health until alive (max 75s)...");
+    console.log("[aiService] Step 2a: Polling AI API health...");
     while (Date.now() - warmStart < WARM_UP_LIMIT_MS) {
       try {
         await axios.get(`${AI_API_URL}/health`, { timeout: 8000 });
         apiAlive = true;
-        console.log(`[aiService] Step 2a OK: AI API alive after ${Math.round((Date.now() - warmStart) / 1000)}s`);
+        console.log("[aiService] Step 2a: AI API is alive after", Date.now() - warmStart, "ms");
         break;
-      } catch (_) {
-        const elapsed = Math.round((Date.now() - warmStart) / 1000);
-        console.log(`[aiService] Still waiting for AI API... (${elapsed}s elapsed)`);
+      } catch {
+        console.log("[aiService] Step 2a: Waiting for AI API...");
         await sleep(POLL_INTERVAL_MS);
       }
     }
 
-    if (!apiAlive) {
-      throw new Error("AI API did not become available within 75 seconds (Render cold-start timeout)");
-    }
+    if (!apiAlive) throw new Error("AI API did not become available within timeout");
 
-    // --- Single predict call (API is confirmed alive) ---
     let pythonResponse;
     try {
       pythonResponse = await axios.post(
@@ -80,7 +68,7 @@ const callAI = async (imageUrl) => {
         formData,
         {
           headers: { ...formData.getHeaders(), "Content-Length": contentLength },
-          timeout: 120000  // 120s — generous buffer after API is confirmed alive
+          timeout: 120000
         }
       );
     } catch (predictErr) {
@@ -88,71 +76,99 @@ const callAI = async (imageUrl) => {
       throw predictErr;
     }
 
-
     const pythonResult = pythonResponse.data;
     console.log("[aiService] Step 2 OK — Python ML Result:", pythonResult);
 
     const isPlant = pythonResult.disease && !pythonResult.disease.includes("Not a Plant");
 
-    // 3️⃣ Return early if not a plant or low confidence
-    if (!isPlant || pythonResult.confidence < 0.2 || pythonResult.disease.includes("Healthy")) {
+    // 3️⃣ Early return: not a plant or very low confidence
+    if (!isPlant || pythonResult.confidence < 0.2) {
+      console.log("[aiService] Early return: not a plant or low confidence");
       return {
-        disease: pythonResult.disease,
+        crop: null,
+        disease: _translateWord("Not identifiable", lang),
+        status: "Unknown",
         confidence: pythonResult.confidence,
         is_plant: isPlant,
+        explanation: _unknownExplanation(lang),
         treatment: null
       };
     }
 
-    // 4️⃣ Call Gemini for treatment plan
+    // 4️⃣ Healthy early return
+    if (pythonResult.disease.toLowerCase().includes("healthy")) {
+      const cropName = _extractCrop(pythonResult.disease);
+      const translatedCrop = _translateCrop(cropName, lang);
+      return {
+        crop: translatedCrop || cropName,
+        disease: _healthyLabel(lang),
+        status: "Healthy",
+        confidence: pythonResult.confidence,
+        is_plant: true,
+        explanation: _healthyExplanation(lang),
+        treatment: null
+      };
+    }
+
+    // 5️⃣ Call Gemini for full analysis
     const diseaseName = pythonResult.disease.replace(/___/g, " - ").replace(/_/g, " ");
     console.log("[aiService] Step 3: Calling Gemini for disease:", diseaseName);
 
+    const LANG_NAMES = { hi: "Hindi", mr: "Marathi", en: "English" };
+    const langName = LANG_NAMES[lang] || "English";
+
     const systemInstruction = `
-      You are an expert Agricultural Pathologist.
-      Your job is to provide specific, accurate treatment plans for crop diseases.
-      You MUST respond ONLY with valid JSON. Do not return any markdown formatting like \`\`\`json.
-      
-      Response JSON Format:
-      {
-        "disease": "<Verified crop and disease name (e.g., Strawberry - Leaf Spot)>",
-        "treatment": {
-          "organic": "<a brief organic treatment method>",
-          "chemical": {
-            "name": "<name of the chemical fungicide/pesticide>",
-            "dose": "<suggested dosage>"
-          },
-          "prevention": "<a brief prevention strategy>"
-        }
-      }
-    `;
+You are an expert Agricultural Pathologist AI.
+The user's selected language is: ${langName}.
+You MUST respond ONLY with valid JSON. No markdown. No extra keys.
+
+Required JSON format:
+{
+  "crop": "<Crop name in ${langName}>",
+  "disease": "<Specific disease name in ${langName} (e.g. टमाटर - झुलसा or Tomato - Late Blight)>",
+  "status": "<MUST be exactly one of: Healthy | Infected | Unknown>",
+  "explanation": "<2-3 sentences explaining the disease in simple ${langName} suitable for a farmer>",
+  "treatment": {
+    "chemical": { "name": "<chemical name>", "dose": "<dosage>" },
+    "organic": "<organic treatment>",
+    "prevention": "<prevention tips>"
+  }
+}
+
+STATUS RULES (strictly follow):
+- status = "Healthy" ONLY if the crop has no disease.
+- status = "Infected" ONLY if a specific disease is clearly identified.
+- status = "Unknown" if: image is unclear, crop is not identifiable, insufficient detail, or confidence is low.
+
+IMPORTANT: "Not identifiable", "Undetermined", "Insufficient" → ALWAYS use status = "Unknown", never "Infected".
+All text fields (crop, disease, explanation, treatment) MUST be in ${langName}.
+    `.trim();
+
+    const promptText = `
+The ML model predicted this crop image as: "${diseaseName}".
+The ML model is trained on: Cotton, Wheat, Rice, Maize, Sugarcane, Tomato, Potato (Healthy and Disease variants).
+
+Look at the attached image and verify:
+- If prediction is correct → provide treatment in ${langName}.
+- If prediction is wrong → correct it and provide treatment in ${langName}.
+- If image is unclear or not a crop → set status = "Unknown" and explain why in ${langName}.
+
+Respond ONLY in ${langName}. All JSON field values must be in ${langName}.
+    `.trim();
 
     const base64Image = imageBuffer.toString("base64");
-    const promptText = `The local ML model predicted this crop image belongs to the class: "${diseaseName}".
-The ML model is trained on 14 crop disease superclasses: Cotton Disease, Cotton Pest, Cotton Healthy, Wheat Disease, Wheat Healthy, Rice Disease, Maize Disease, Maize Healthy, Sugarcane Disease, Sugarcane Healthy, Tomato Disease, Tomato Healthy, Potato Disease, Potato Healthy.
-Please look at the attached image to verify this prediction.
-If the prediction looks correct, provide precise treatment for that disease.
-If the ML model seems wrong (e.g., the image clearly shows a different crop), identify the correct crop and disease yourself and provide appropriate treatment.
-Always return the specific disease name, not just the superclass.`;
 
     const geminiResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: promptText },
-            {
-              inlineData: {
-                data: base64Image,
-                mimeType: "image/jpeg"
-              }
-            }
-          ]
-        }
-      ],
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: promptText },
+          { inlineData: { data: base64Image, mimeType: "image/jpeg" } }
+        ]
+      }],
       config: {
-        systemInstruction: systemInstruction,
+        systemInstruction,
         responseMimeType: "application/json",
       }
     });
@@ -160,7 +176,7 @@ Always return the specific disease name, not just the superclass.`;
     console.log("[aiService] Step 3 OK: Gemini responded");
     const geminiText = geminiResponse.text;
 
-    let geminiResult = { treatment: { message: "AI Treatment generation failed." } };
+    let geminiResult = null;
     try {
       const cleanText = geminiText.replace(/```json/g, "").replace(/```/g, "").trim();
       geminiResult = JSON.parse(cleanText);
@@ -168,18 +184,47 @@ Always return the specific disease name, not just the superclass.`;
       console.error("[aiService] Failed to parse Gemini JSON:", geminiText);
     }
 
-    const finalDiseaseName = geminiResult.disease || pythonResult.disease;
+    if (!geminiResult) {
+      // Fallback if Gemini parse fails
+      return {
+        crop: _extractCrop(diseaseName),
+        disease: diseaseName,
+        status: "Unknown",
+        confidence: pythonResult.confidence,
+        is_plant: true,
+        explanation: null,
+        treatment: { message: "AI analysis failed. Please try again." }
+      };
+    }
+
+    // Validate status — never default an ambiguous case to "Infected"
+    let finalStatus = geminiResult.status;
+    if (!["Healthy", "Infected", "Unknown"].includes(finalStatus)) {
+      finalStatus = "Unknown";
+    }
+    const diseaseText = (geminiResult.disease || "").toLowerCase();
+    if (
+      diseaseText.includes("not identifiable") ||
+      diseaseText.includes("undetermined") ||
+      diseaseText.includes("insufficient") ||
+      diseaseText.includes("unclear") ||
+      diseaseText.includes("cannot identify")
+    ) {
+      finalStatus = "Unknown";
+    }
 
     return {
-      disease: finalDiseaseName,
+      crop: geminiResult.crop || _extractCrop(diseaseName),
+      disease: geminiResult.disease || diseaseName,
+      status: finalStatus,
       confidence: pythonResult.confidence,
-      is_plant: pythonResult.is_plant,
-      treatment: geminiResult.treatment || geminiResult
+      is_plant: true,
+      explanation: geminiResult.explanation || null,
+      treatment: finalStatus === "Healthy" ? null : (geminiResult.treatment || null)
     };
 
   } catch (error) {
-    // Log the FULL error so we can see exactly where it failed
-    console.error("[aiService] ❌ PIPELINE FAILED at step:");
+    console.error("[aiService] ❌ PIPELINE FAILED:");
     console.error("  Message:", error.message);
     console.error("  Code:", error.code);
     console.error("  Stack:", error.stack?.split('\n')[1]);
@@ -190,5 +235,50 @@ Always return the specific disease name, not just the superclass.`;
     throw new Error("Failed to process image with the Hybrid ML+AI pipeline");
   }
 };
+
+/* ── Helpers ── */
+
+function _extractCrop(diseaseName) {
+  if (!diseaseName) return null;
+  const dashIdx = diseaseName.indexOf(' - ');
+  return dashIdx > 0 ? diseaseName.slice(0, dashIdx).trim() : null;
+}
+
+function _translateCrop(crop, lang) {
+  if (!crop || lang === 'en') return crop;
+  const MAP = {
+    hi: { Maize: 'मक्का', Tomato: 'टमाटर', Potato: 'आलू', Rice: 'चावल', Wheat: 'गेहूं', Cotton: 'कपास', Sugarcane: 'गन्ना' },
+    mr: { Maize: 'मका', Tomato: 'टोमॅटो', Potato: 'बटाटा', Rice: 'तांदूळ', Wheat: 'गहू', Cotton: 'कापूस', Sugarcane: 'ऊस' }
+  };
+  return (MAP[lang] || {})[crop] || crop;
+}
+
+function _translateWord(word, lang) {
+  const MAP = {
+    hi: { 'Not identifiable': 'पहचान योग्य नहीं' },
+    mr: { 'Not identifiable': 'ओळखता येत नाही' }
+  };
+  return (MAP[lang] || {})[word] || word;
+}
+
+function _healthyLabel(lang) {
+  return { hi: 'कोई रोग नहीं', mr: 'कोणताही रोग नाही', en: 'No Disease' }[lang] || 'No Disease';
+}
+
+function _healthyExplanation(lang) {
+  return {
+    hi: 'आपकी फसल स्वस्थ दिख रही है। किसी उपचार की आवश्यकता नहीं है। इसी तरह देखभाल जारी रखें।',
+    mr: 'आपले पीक निरोगी दिसत आहे. कोणत्याही उपचाराची गरज नाही. अशाच प्रकारे काळजी घ्या.',
+    en: 'Your crop looks healthy! No treatment is required. Keep up the good work!'
+  }[lang] || 'Your crop looks healthy!';
+}
+
+function _unknownExplanation(lang) {
+  return {
+    hi: 'छवि से फसल या रोग की पहचान नहीं हो सकी। कृपया पत्ते की स्पष्ट, नज़दीकी तस्वीर अपलोड करें।',
+    mr: 'प्रतिमेतून पीक किंवा रोग ओळखता आला नाही. कृपया पानाचा स्पष्ट, जवळचा फोटो अपलोड करा.',
+    en: 'The image could not be identified as a crop or disease. Please upload a clear, close-up photo of the affected leaf.'
+  }[lang] || 'Image could not be identified.';
+}
 
 module.exports = callAI;

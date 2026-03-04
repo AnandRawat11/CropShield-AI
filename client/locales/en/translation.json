@@ -1,0 +1,255 @@
+{
+    "nav": {
+        "home": "Home",
+        "howItWorks": "How it works",
+        "about": "About",
+        "login": "Login",
+        "signUp": "Sign Up",
+        "dashboard": "Dashboard",
+        "logout": "Logout",
+        "aiOnline": "AI Diagnostic Engine Online"
+    },
+    "scan": {
+        "title": "AI Disease Detection",
+        "subtitle": "Upload a photo of your crop to instantly identify diseases and get treatment plans.",
+        "uploadImage": "Upload Image",
+        "clickToUpload": "Click to upload",
+        "formats": "JPG, PNG supported",
+        "startDiagnosis": "Start Diagnosis",
+        "analyzing": "Analyzing...",
+        "warmingUp": "Warming up AI server...",
+        "coldStart": "First request takes ~60s on cold start. Please wait...",
+        "coldStartError": "The AI server is still waking up. Please wait 30 seconds and try again.",
+        "genericError": "Failed to analyze image. Please try again.",
+        "selectImageFirst": "Please select an image first",
+        "qualityError": "Quality Error",
+        "qualityErrorSub": "The AI could not confidently identify a crop or disease. Please upload a clear, focused photo of a plant leaf.",
+        "analysisResult": "Analysis Result",
+        "severity": "Severity",
+        "detectedIssue": "Detected Issue",
+        "match": "Match",
+        "recommendedTreatment": "Recommended Treatment",
+        "chemicalControl": "Chemical Control",
+        "organicControl": "Organic Control",
+        "prevention": "Prevention",
+        "dose": "Dose",
+        "cropHealthy": "Your crop looks healthy! No treatment is required. Keep up the good work! 🌾",
+        "noTreatment": "No specific treatment data available for this condition.",
+        "readyToScan": "Ready to Scan",
+        "readyToScanSub": "Upload a clear image of the affected leaf or plant area for the best results."
+    },
+    "premium": {
+        "title": "Upgrade to Premium",
+        "subtitle": "Unlock unlimited AI-powered crop analysis and advanced insights",
+        "freePlan": "Free Plan",
+        "premiumPlan": "Premium Plan",
+        "maybeLater": "Maybe Later",
+        "upgradeNow": "Upgrade Now (Demo)",
+        "demoNote": "* Virtual payment for demo purposes only",
+        "successAlert": "🎉 Payment Successful! You are now Premium.",
+        "failAlert": "Upgrade failed. Try again.",
+        "free": {
+            "scans": "2–3 scans per day",
+            "basicDetection": "Basic disease detection",
+            "limitedTreatment": "Limited treatment details",
+            "noHistory": "No history insights",
+            "noSupport": "No priority support"
+        },
+        "pro": {
+            "unlimited": "Unlimited AI scans",
+            "advanced": "Advanced disease detection",
+            "treatment": "Detailed treatment & dosage",
+            "history": "Scan history & analytics",
+            "support": "Priority expert support"
+        }
+    },
+    "home": {
+        "trustedBy": "Trusted by 1,000+ Farmers",
+        "heroTitle": "Protect Your Crops with",
+        "heroBold": "AI Precision",
+        "heroSub": "Instant plant disease detection, expert treatment guidance, and smart pesticide recommendations — all powered by AI.",
+        "startScan": "Start Disease Scan",
+        "builtForPerformance": "Built for Performance",
+        "builtForPerformanceSub": "Thoughtfully designed features that balance speed, security, and simplicity.",
+        "howItWorks": "How It Works",
+        "howItWorksSub": "Easily upload your crop images and let our AI analyze them instantly. Get accurate disease detection and actionable insights to keep your crops healthy.",
+        "step": "STEP",
+        "steps": {
+            "upload": {
+                "title": "Upload Image",
+                "desc": "Upload an image of your infected crop."
+            },
+            "ai": {
+                "title": "AI Processing",
+                "desc": "Image preprocessing & analysis by our AI model."
+            },
+            "detect": {
+                "title": "Disease Detection",
+                "desc": "AI detects the crop disease accurately."
+            },
+            "result": {
+                "title": "Fast Result",
+                "desc": "Get instant AI-powered diagnosis results that quickly identify crop diseases."
+            },
+            "action": {
+                "title": "Action Plan",
+                "desc": "Personalized treatment recommendations to tackle diseases and pests effectively."
+            }
+        },
+        "vision": "Our Vision & Mission",
+        "visionText": "We aim to empower farmers using AI-driven crop disease detection. Our platform provides early insights and actionable solutions to protect crops, reduce losses, and improve agricultural yield.",
+        "smartDetection": "Smart Detection",
+        "aiPowered": "AI Powered",
+        "stats": {
+            "accuracy": "Detection Accuracy",
+            "diseases": "Crop Diseases Identified",
+            "support": "AI Assistance"
+        },
+        "features": {
+            "ai": {
+                "title": "AI Powered Analysis",
+                "desc": "Smart algorithms analyze data with high accuracy in seconds."
+            },
+            "secure": {
+                "title": "Secure & Reliable",
+                "desc": "Your data is protected with enterprise-grade security."
+            },
+            "fast": {
+                "title": "Fast Results",
+                "desc": "Instant processing delivers results without delay."
+            },
+            "reports": {
+                "title": "Insightful Reports",
+                "desc": "Clear visual reports help in better decision-making."
+            }
+        }
+    },
+    "login": {
+        "title": "CropShield AI",
+        "tagline": "Securing your harvest with intelligent detection",
+        "email": "Email Address",
+        "emailPlaceholder": "farmer@example.com",
+        "password": "Password",
+        "passwordPlaceholder": "••••••••",
+        "forgot": "Forgot?→",
+        "signIn": "Sign In",
+        "signingIn": "Signing in…",
+        "orContinueWith": "or continue with",
+        "noAccount": "Don't have an account?",
+        "startTrial": "Start free trial",
+        "google": "Google",
+        "apple": "Apple",
+        "help": "Help",
+        "privacy": "Privacy"
+    },
+    "register": {
+        "title": "CropShield AI",
+        "tagline": "Create your free account and start protecting crops",
+        "fullName": "Full Name",
+        "fullNamePlaceholder": "John Farmer",
+        "email": "Email Address",
+        "emailPlaceholder": "farmer@example.com",
+        "password": "Password",
+        "passwordPlaceholder": "Min. 8 characters",
+        "confirmPassword": "Confirm Password",
+        "confirmPasswordPlaceholder": "Re-enter password",
+        "createAccount": "Create Account",
+        "creatingAccount": "Creating account…",
+        "orContinueWith": "or continue with",
+        "alreadyHaveAccount": "Already have an account?",
+        "signIn": "Sign in",
+        "google": "Google",
+        "apple": "Apple",
+        "help": "Help",
+        "privacy": "Privacy"
+    },
+    "dashboard": {
+        "loading": "Loading Dashboard...",
+        "overview": "Dashboard Overview",
+        "overviewSub": "Track your crop health and recent AI scans.",
+        "scansRemaining": "Scans Remaining:",
+        "getUnlimited": "Get Unlimited",
+        "totalUploads": "Total Uploads",
+        "diseasesDetected": "Diseases Detected",
+        "mostFrequent": "Most Frequent Disease",
+        "avgConfidence": "Avg. Confidence Score",
+        "newScan": "New Disease Scan",
+        "newScanSub": "Upload a clear picture of the infected crop leaf for AI analysis.",
+        "dragDrop": "Drag & drop your image here",
+        "orClick": "or click to browse from your computer",
+        "selectFile": "Select File",
+        "remove": "Remove",
+        "scanButton": "Scan with AI",
+        "analyzing": "Analyzing...",
+        "aiAnalyzing": "AI is analyzing the image",
+        "deepLearning": "Running through deep learning models...",
+        "readyTitle": "Ready for Analysis",
+        "readySub": "Upload an image and hit scan to see detailed disease information and treatment recommendations right here.",
+        "qualityError": "Quality Error",
+        "qualityErrorSub": "The AI could not confidently identify this image. Please ensure you upload a clear, well-lit photo of a crop leaf.",
+        "analysisComplete": "Analysis Complete",
+        "riskLevel": "Risk Level",
+        "risk": "Risk",
+        "treatmentRec": "Treatment Recommendation",
+        "noTreatment": "No specific treatment data available for this condition.",
+        "detectionsOverTime": "Detections Over Time",
+        "diseaseDistribution": "Disease Distribution",
+        "cropAnalysis": "Crop-wise Analysis",
+        "predictionHistory": "Prediction History",
+        "searchPlaceholder": "Search disease or crop...",
+        "date": "Date",
+        "crop": "Crop",
+        "predictedDisease": "Predicted Disease",
+        "confidence": "Confidence",
+        "status": "Status",
+        "action": "Action",
+        "details": "Details",
+        "noScans": "No scans yet",
+        "noScansSub": "Upload a crop image above to get your first AI scan result.",
+        "unknown": "Unknown",
+        "none": "None",
+        "na": "N/A",
+        "healthy": "Healthy",
+        "infected": "Infected",
+        "undetermined": "Undetermined",
+        "noDisease": "No Disease",
+        "unknownStatus": "Unknown",
+        "unknownHelpText": "Could not identify crop or disease. Please upload a clear, close-up photo of the affected leaf.",
+        "aiExplanation": "AI Analysis",
+        "account": "Account",
+        "upgradePlan": "Upgrade Plan",
+        "premiumBadge": "Premium",
+        "plan": "Plan",
+        "hi": "Hi",
+        "days": {
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat",
+            "sun": "Sun"
+        },
+        "chart": {
+            "tomatoBlight": "Tomato Blight",
+            "leafSpot": "Leaf Spot",
+            "rootRot": "Root Rot",
+            "healthy": "Healthy",
+            "tomato": "Tomato",
+            "potato": "Potato",
+            "corn": "Corn",
+            "wheat": "Wheat"
+        }
+    },
+    "oauth": {
+        "authenticating": "Authenticating",
+        "pleaseWait": "Please wait while we log you in...",
+        "errorTitle": "Authentication Error",
+        "redirecting": "Redirecting back to login..."
+    },
+    "lang": {
+        "en": "English",
+        "hi": "हिंदी",
+        "mr": "मराठी"
+    }
+}

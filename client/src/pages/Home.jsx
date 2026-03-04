@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 // import { motion } from "framer-motion";
 // import farmerImg from "../assets/farmer.png";
 import {
@@ -17,11 +18,12 @@ import Navbar from '../components/Navbar';
 
 export default function GardenTreeLanding() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const stats = [
-    { value: "95%", label: "Detection Accuracy" },
-    { value: "5+", label: "Crop Diseases Identified" },
-    { value: "24/7", label: "AI Assistance" },
+    { value: "95%", label: t("home.stats.accuracy") },
+    { value: "5+", label: t("home.stats.diseases") },
+    { value: "24/7", label: t("home.stats.support") },
   ];
   const teamMembers = [
     {
@@ -43,23 +45,23 @@ export default function GardenTreeLanding() {
   const features = [
     {
       icon: Cpu,
-      title: "AI Powered Analysis",
-      desc: "Smart algorithms analyze data with high accuracy in seconds.",
+      title: t("home.features.ai.title"),
+      desc: t("home.features.ai.desc"),
     },
     {
       icon: ShieldCheck,
-      title: "Secure & Reliable",
-      desc: "Your data is protected with enterprise-grade security.",
+      title: t("home.features.secure.title"),
+      desc: t("home.features.secure.desc"),
     },
     {
       icon: Zap,
-      title: "Fast Results",
-      desc: "Instant processing delivers results without delay.",
+      title: t("home.features.fast.title"),
+      desc: t("home.features.fast.desc"),
     },
     {
       icon: BarChart,
-      title: "Insightful Reports",
-      desc: "Clear visual reports help in better decision-making.",
+      title: t("home.features.reports.title"),
+      desc: t("home.features.reports.desc"),
     },
   ];
   const AboutUs = () => {
@@ -99,19 +101,18 @@ export default function GardenTreeLanding() {
         <div className="relative z-10 max-w-6xl w-full px-11 py-15 flex justify-center">
           <div className="flex flex-col items-center text-center pt-20">
             <span className="inline-block mb-6 px-5 py-2 rounded-full bg-green-500/20 text-green-300 text-sm font-medium">
-              Trusted by 1,000+ Farmers
+              {t("home.trustedBy")}
             </span>
 
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-8 max-w-4xl">
-              Protect Your Crops with <br />
+              {t("home.heroTitle")} <br />
               <span className="text-green-400 font-extrabold">
-                AI Precision
+                {t("home.heroBold")}
               </span>
             </h1>
 
             <p className="text-white/85 text-lg md:text-xl max-w-3xl leading-relaxed mb-12">
-              Instant plant disease detection, expert treatment guidance,
-              and smart pesticide recommendations — all powered by AI.
+              {t("home.heroSub")}
             </p>
 
             <div className="flex flex-col items-center gap-3">
@@ -137,7 +138,7 @@ export default function GardenTreeLanding() {
                   <circle cx="12" cy="13" r="3" />
                 </svg>
 
-                <span>Start Disease Scan</span>
+                <span>{t("home.startScan")}</span>
               </button>
 
               {/* Language Button (Adjacent below) */}
@@ -172,10 +173,10 @@ export default function GardenTreeLanding() {
           className="text-center mb-24 relative z-10"
         >
           <h2 className="text-5xl md:text-6xl font-bold text-gray-900">
-            Built for Performance
+            {t("home.builtForPerformance")}
           </h2>
           <p className="text-gray-500 mt-4 max-w-xl mx-auto">
-            Thoughtfully designed features that balance speed, security, and simplicity.
+            {t("home.builtForPerformanceSub")}
           </p>
         </motion.div>
 
@@ -258,11 +259,10 @@ export default function GardenTreeLanding() {
           {/* Heading */}
           <div className="text-center mb-12 px-4">
             <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900">
-              How It Works
+              {t("home.howItWorks")}
             </h2>
             <p className="text-gray-500 mt-4 text-base sm:text-lg max-w-2xl mx-auto">
-              Easily upload your crop images and let our AI analyze them instantly.
-              Get accurate disease detection and actionable insights to keep your crops healthy.
+              {t("home.howItWorksSub")}
             </p>
           </div>
 
@@ -272,11 +272,11 @@ export default function GardenTreeLanding() {
             {/* Mobile & Tablet: vertical list with connector line */}
             <div className="flex flex-col gap-8 lg:hidden">
               {[
-                { icon: Upload, color: "bg-lime-500", step: "01", title: "Upload Image", desc: "Upload an image of your infected crop." },
-                { icon: Cpu, color: "bg-emerald-500", step: "02", title: "AI Processing", desc: "Image preprocessing & analysis by our AI model." },
-                { icon: ShieldCheck, color: "bg-cyan-500", step: "03", title: "Disease Detection", desc: "AI detects the crop disease accurately." },
-                { icon: Clock, color: "bg-blue-500", step: "04", title: "Fast Result", desc: "Get instant AI-powered diagnosis results that quickly identify crop diseases." },
-                { icon: Target, color: "bg-purple-600", step: "05", title: "Action Plan", desc: "Personalized treatment recommendations to tackle diseases and pests effectively." },
+                { icon: Upload, color: "bg-lime-500", step: "01", title: t("home.steps.upload.title"), desc: t("home.steps.upload.desc") },
+                { icon: Cpu, color: "bg-emerald-500", step: "02", title: t("home.steps.ai.title"), desc: t("home.steps.ai.desc") },
+                { icon: ShieldCheck, color: "bg-cyan-500", step: "03", title: t("home.steps.detect.title"), desc: t("home.steps.detect.desc") },
+                { icon: Clock, color: "bg-blue-500", step: "04", title: t("home.steps.result.title"), desc: t("home.steps.result.desc") },
+                { icon: Target, color: "bg-purple-600", step: "05", title: t("home.steps.action.title"), desc: t("home.steps.action.desc") },
               ].map(({ icon: Icon, color, step, title, desc }, i) => (
                 <motion.div
                   key={step}
@@ -297,7 +297,7 @@ export default function GardenTreeLanding() {
                   </div>
                   {/* Text */}
                   <div className="pb-6">
-                    <p className="text-xs font-semibold text-gray-400">STEP {step}</p>
+                    <p className="text-xs font-semibold text-gray-400">{t("home.step")} {step}</p>
                     <h4 className="font-bold text-base text-gray-900 mt-0.5">{title}</h4>
                     <p className="text-sm text-gray-500 mt-1">{desc}</p>
                   </div>
@@ -319,9 +319,9 @@ export default function GardenTreeLanding() {
                 </div>
               </div>
               <div className="text-center mt-4 w-40 -translate-x-8">
-                <p className="text-xs font-semibold">STEP 01</p>
-                <h4 className="font-bold text-sm">Upload Image</h4>
-                <p className="text-xs text-gray-500">Upload infected crop image</p>
+                <p className="text-xs font-semibold">{t("home.step")} 01</p>
+                <h4 className="font-bold text-sm">{t("home.steps.upload.title")}</h4>
+                <p className="text-xs text-gray-500">{t("home.steps.upload.desc")}</p>
               </div>
             </div>
 
@@ -334,9 +334,9 @@ export default function GardenTreeLanding() {
                 </div>
               </div>
               <div className="text-center mt-4 w-40 -translate-x-8">
-                <p className="text-xs font-semibold">STEP 02</p>
-                <h4 className="font-bold text-sm">AI Processing</h4>
-                <p className="text-xs text-gray-500">Image preprocessing & analysis</p>
+                <p className="text-xs font-semibold">{t("home.step")} 02</p>
+                <h4 className="font-bold text-sm">{t("home.steps.ai.title")}</h4>
+                <p className="text-xs text-gray-500">{t("home.steps.ai.desc")}</p>
               </div>
             </div>
 
@@ -349,18 +349,18 @@ export default function GardenTreeLanding() {
                 </div>
               </div>
               <div className="text-center mt-4 w-40 -translate-x-8">
-                <p className="text-xs font-semibold">STEP 03</p>
-                <h4 className="font-bold text-sm">Disease Detection</h4>
-                <p className="text-xs text-gray-500">AI detects crop disease</p>
+                <p className="text-xs font-semibold">{t("home.step")} 03</p>
+                <h4 className="font-bold text-sm">{t("home.steps.detect.title")}</h4>
+                <p className="text-xs text-gray-500">{t("home.steps.detect.desc")}</p>
               </div>
             </div>
 
             {/* STEP 04 */}
             <div className="absolute top-[10%] left-[66%] flex flex-col items-center">
               <div className="text-center w-40 mb-6 -translate-x-8">
-                <p className="text-xs font-semibold">STEP 04</p>
-                <h4 className="font-bold text-sm">Fast Result</h4>
-                <p className="text-xs text-gray-500">Get instant AI-powered diagnosis results that quickly identify crop diseases.</p>
+                <p className="text-xs font-semibold">{t("home.step")} 04</p>
+                <h4 className="font-bold text-sm">{t("home.steps.result.title")}</h4>
+                <p className="text-xs text-gray-500">{t("home.steps.result.desc")}</p>
               </div>
               <div className="relative w-24 h-24 flex items-center justify-center">
                 <div className="absolute inset-0 rounded-full bg-blue-500" />
@@ -379,9 +379,9 @@ export default function GardenTreeLanding() {
                 </div>
               </div>
               <div className="text-center mt-4 w-40 -translate-x-10">
-                <p className="text-xs font-semibold">STEP 05</p>
-                <h4 className="font-bold text-sm">Action Plan</h4>
-                <p className="text-xs text-gray-500">Personalized treatment recommendations for your crops.</p>
+                <p className="text-xs font-semibold">{t("home.step")} 05</p>
+                <h4 className="font-bold text-sm">{t("home.steps.action.title")}</h4>
+                <p className="text-xs text-gray-500">{t("home.steps.action.desc")}</p>
               </div>
             </div>{/* end step 05 */}
           </div>{/* end desktop full-width block */}
@@ -419,22 +419,20 @@ export default function GardenTreeLanding() {
             viewport={{ once: true }}
           >
             <h2 className="text-4xl font-bold text-gray-900 leading-tight">
-              Our Vision & Mission
+              {t("home.vision")}
             </h2>
 
             <p className="text-gray-600 mt-6 text-lg leading-relaxed">
-              We aim to empower farmers using <span className="font-semibold text-green-600">AI-driven crop disease detection</span>.
-              Our platform provides early insights and actionable solutions to
-              protect crops, reduce losses, and improve agricultural yield.
+              {t("home.visionText")}
             </p>
 
             {/* Feature Pills */}
             <div className="flex gap-4 mt-8 flex-wrap">
               <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full text-green-700 font-medium">
-                🌿 Smart Detection
+                🌿 {t("home.smartDetection")}
               </div>
               <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full text-blue-700 font-medium">
-                🤖 AI Powered
+                🤖 {t("home.aiPowered")}
               </div>
             </div>
 

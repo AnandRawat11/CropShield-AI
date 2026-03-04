@@ -1,13 +1,5 @@
 const callAI = require("../services/aiService");
-const Treatment = require("../models/Treatment");
 const DiseaseRecord = require("../models/DiseaseRecord");
-
-// Helper to clean disease name
-const formatDiseaseName = (name) => {
-  return name
-    .replace("___", " - ")
-    .replace(/_/g, " ");
-};
 
 const detectDisease = async (req, res) => {
   try {
@@ -15,61 +7,53 @@ const detectDisease = async (req, res) => {
       return res.status(400).json({ error: "No image uploaded" });
     }
 
-    // Cloudinary image URL
     const imageUrl = req.file.path;
+    const lang = req.body.lang || "en";
 
-    // Call AI Model
-    const aiResult = await callAI(imageUrl);
+    // Call AI pipeline
+    const aiResult = await callAI(imageUrl, lang);
 
-    // Initial severity logic
+    // Map 3-state status → severity (for backward compat with scan result UI)
     let severity = "Low";
-    let diseaseName = aiResult.disease;
+    if (aiResult.status === "Healthy") severity = "None";
+    else if (aiResult.status === "Unknown") severity = "Low";
+    else if (aiResult.confidence > 0.85) severity = "High";
+    else if (aiResult.confidence > 0.70) severity = "Medium";
+    else severity = "Low";
 
-    // Handle Non-Plant or Unknown
-    if (aiResult.is_plant === false || diseaseName.includes("Not a Plant")) {
-      severity = "None"; // Or "Low", depending on whether we want to alarm the user
-      diseaseName = "Not a Crop / " + (diseaseName.split("(")[1]?.replace(")", "") || "Unknown");
-    } else if (diseaseName.includes("Unknown")) {
-      severity = "Low";
-    } else if (diseaseName.toLowerCase().includes("healthy")) {
-      severity = "None";
-    } else if (aiResult.confidence > 0.85) {
-      severity = "High";
-    } else if (aiResult.confidence > 0.7) {
-      severity = "Medium";
+    // Determine treatment to return
+    let treatment = aiResult.treatment;
+    if (aiResult.status === "Healthy") {
+      treatment = { message: aiResult.explanation };
+    } else if (aiResult.status === "Unknown") {
+      treatment = { message: aiResult.explanation };
     }
 
-    // Trim and clean name
-    const cleanName = formatDiseaseName(diseaseName).trim();
-
-    // Fetch treatment only if disease (not healthy and not non-plant)
-    let treatment = null;
-    if (severity !== "None" && !cleanName.includes("Not a Crop")) {
-      // Use the dynamically generated AI treatment plan
-      treatment = aiResult.treatment || { message: "Treatment data not available yet" };
-    } else if (cleanName.includes("Not a Crop")) {
-      treatment = { message: "Please upload a valid crop leaf image." };
-    } else if (severity === "None") {
-      treatment = { message: "Your crop looks healthy! No treatment is required. Keep up the good work! 🌾" };
-    }
-
-    // Save to History
+    // Save structured record to DB
     await DiseaseRecord.create({
       user: req.user.id,
       imageUrl,
-      disease: cleanName,
+      disease: aiResult.disease,
+      crop: aiResult.crop || "Unknown",
       confidence: aiResult.confidence,
-      severity
+      status: aiResult.status,     // "Healthy" | "Infected" | "Unknown"
+      severity,
+      treatment: aiResult.treatment,  // structured object
+      explanation: aiResult.explanation
     });
 
+    // API response
     res.json({
       imageUrl,
       disease: {
-        disease: cleanName,
+        disease: aiResult.disease,
         confidence: Number(aiResult.confidence.toFixed(3)),
-        severity
+        severity,
+        status: aiResult.status,
+        crop: aiResult.crop
       },
-      treatment
+      treatment,
+      explanation: aiResult.explanation
     });
 
   } catch (error) {
