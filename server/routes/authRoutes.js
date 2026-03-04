@@ -4,12 +4,40 @@ const router = express.Router();
 const { register, login } = require("../controllers/authController");
 const auth = require("../middleware/auth");
 const User = require("../models/User");
+const passport = require("passport");
+const jwt = require("jsonwebtoken");
 
 const FREE_DAILY_LIMIT = 5; // 👈 change limit here anytime
 
 /* ================= AUTH ================= */
 router.post("/register", register);
 router.post("/login", login);
+
+/* ================= GOOGLE OAUTH ================= */
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login?error=true" }),
+  (req, res) => {
+    // Generate JWT token on successful login
+    const token = jwt.sign(
+      { id: req.user._id, plan: req.user.plan },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Redirect to frontend with token
+    const frontendUrl = process.env.FRONTEND_URL
+      ? process.env.FRONTEND_URL.split(',')[0]
+      : "http://localhost:5173";
+
+    res.redirect(`${frontendUrl}/oauth-success?token=${token}`);
+  }
+);
 
 /* ================= GET LOGGED-IN USER ================= */
 router.get("/me", auth, async (req, res) => {
