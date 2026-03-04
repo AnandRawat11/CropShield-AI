@@ -316,25 +316,25 @@ export default function Dashboard() {
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <StatCard
             title="Total Uploads"
-            value={totalScans || 12} // mock fallback for visual
+            value={totalScans}
             icon={<Upload className="w-6 h-6 text-green-600" />}
             colorClass="bg-green-100"
           />
           <StatCard
             title="Diseases Detected"
-            value={diseasesDetected || 4} // mock fallback
+            value={diseasesDetected}
             icon={<Activity className="w-6 h-6 text-blue-600" />}
             colorClass="bg-blue-100"
           />
           <StatCard
             title="Most Frequent Disease"
-            value={mostCommonDisease !== "None" ? mostCommonDisease : "Tomato Blight"} // mock fallback
+            value={mostCommonDisease}
             icon={<AlertTriangle className="w-6 h-6 text-amber-600" />}
             colorClass="bg-amber-100"
           />
           <StatCard
             title="Avg. Confidence Score"
-            value={`${avgConfidence || 92}%`} // mock fallback
+            value={avgConfidence > 0 ? `${avgConfidence}%` : "N/A"}
             icon={<ShieldCheck className="w-6 h-6 text-emerald-600" />}
             colorClass="bg-emerald-100"
           />
@@ -596,11 +596,17 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-gray-700">
-                {/* Fallback to mock data if scans is empty for visual layout */}
-                {(filteredScans.length > 0 ? filteredScans : [
-                  { _id: '1', date: new Date().toISOString(), crop: 'Tomato', disease: 'Early Blight', confidence: 0.94, status: 'Infected' },
-                  { _id: '2', date: new Date(Date.now() - 86400000).toISOString(), crop: 'Potato', disease: 'Healthy', confidence: 0.99, status: 'Healthy' }
-                ]).map((scan, i) => (
+                {filteredScans.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center gap-3 text-gray-400">
+                        <ScanSearch className="w-10 h-10" />
+                        <p className="font-semibold text-gray-500">No scans yet</p>
+                        <p className="text-sm">Upload a crop image above to get your first AI scan result.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredScans.map((scan, i) => (
                   <tr key={scan._id || i} className="hover:bg-gray-50/50 transition">
                     <td className="px-6 py-4">
                       {new Date(scan.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -638,6 +644,7 @@ export default function Dashboard() {
                     </td>
                   </tr>
                 ))}
+
               </tbody>
             </table>
           </div>
