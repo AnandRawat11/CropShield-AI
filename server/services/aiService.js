@@ -49,7 +49,7 @@ const callAI = async (imageUrl) => {
     // This beats the fixed-sleep approach because:
     //   • If API is already warm, we skip the wait entirely
     //   • If cold, we detect exactly when it's ready (30–60s on Render free tier)
-    const WARM_UP_LIMIT_MS = 75000;
+    const WARM_UP_LIMIT_MS = 120000;  // 120s — confirmed cold-start takes >90s on Render free tier
     const POLL_INTERVAL_MS = 5000;
     const warmStart = Date.now();
     let apiAlive = false;
