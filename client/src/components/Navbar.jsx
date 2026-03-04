@@ -72,7 +72,7 @@ const Navbar = () => {
 
         {/* LOGO */}
         <NavLink to="/" className="flex items-center gap-2 text-white font-bold">
-          <Leaf className="text-emerald-400" />
+          <img src="/logo.png" alt="CropShield-AI" className="h-9 w-auto" />
           CropShield AI
         </NavLink>
 

@@ -47,10 +47,7 @@ const OAuthSuccess = () => {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-[#F7F8F6]">
             <div className="flex flex-col items-center gap-4">
-                <div className="w-[80px] h-[80px] rounded-2xl flex items-center justify-center shadow-lg animate-pulse"
-                    style={{ background: "linear-gradient(135deg, #111b14 60%, #1f3323)" }}>
-                    <Leaf className="w-10 h-10 text-green-400" strokeWidth={2} />
-                </div>
+                <img src="/logo.png" alt="CropShield-AI" className="h-20 w-auto animate-pulse" />
 
                 {error ? (
                     <div className="text-center">

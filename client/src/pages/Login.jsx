@@ -56,12 +56,7 @@ const Login = () => {
 
         {/* Logo */}
         <div className="flex justify-center mb-5">
-          <div
-            className="w-[58px] h-[58px] rounded-2xl flex items-center justify-center shadow-lg"
-            style={{ background: "linear-gradient(135deg, #111b14 60%, #1f3323)" }}
-          >
-            <Leaf className="w-7 h-7 text-green-400" strokeWidth={2} />
-          </div>
+          <img src="/logo.png" alt="CropShield-AI" className="h-20 w-auto" />
         </div>
 
         {/* Brand name */}
