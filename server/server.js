@@ -3,6 +3,9 @@ const cors = require("cors");
 const axios = require("axios");
 require("dotenv").config();
 const connectDB = require("./config/db");
+const session = require("express-session");
+const passport = require("passport");
+require("./config/passport");
 const authRoutes = require("./routes/authRoutes");
 
 const diseaseRoutes = require("./routes/diseaseRoutes");
@@ -50,6 +53,16 @@ app.get("/", (req, res) => {
 });
 
 app.use(express.json());
+
+app.use(
+  session({
+    secret: process.env.JWT_SECRET || "fallback_secret",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/disease", diseaseRoutes);

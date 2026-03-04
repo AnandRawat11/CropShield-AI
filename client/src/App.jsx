@@ -7,16 +7,19 @@ import Dashboard from "./pages/Dashboard";
 import ScanCrop from "./pages/ScanCrop";
 import Navbar from "./components/Navbar";
 
+import OAuthSuccess from "./pages/OAuthSuccess";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <BrowserRouter>
-    <Navbar />
+      <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/oauth-success" element={<OAuthSuccess />} />
+
 
         <Route
           path="/dashboard"

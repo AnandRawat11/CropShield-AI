@@ -7,6 +7,8 @@ const UserSchema = new mongoose.Schema({
     unique: true
   },
   password: String,
+  googleId: String,
+  avatar: String,
 
   plan: {
     type: String,
