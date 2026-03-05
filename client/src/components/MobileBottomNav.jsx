@@ -20,12 +20,7 @@ const NAV_ITEMS = [
         icon: Camera,
         to: "/scan",
     },
-    {
-        labelKey: "nav.fieldMap",
-        fallback: "Fields",
-        icon: Map,
-        to: "/dashboard?tab=map",
-    },
+
     {
         labelKey: "nav.guide",
         fallback: "Guide",

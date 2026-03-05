@@ -55,10 +55,7 @@ function DesktopSidebar({ onLogout, user }) {
                     <LayoutDashboard className="w-5 h-5 shrink-0" />
                     <span className="font-medium opacity-0 group-hover:opacity-100 transition-opacity text-sm">Scan</span>
                 </NavLink>
-                <NavLink to="/dashboard?tab=map" className={({ isActive }) => `flex items-center gap-4 p-2.5 rounded-full transition-colors whitespace-nowrap overflow-hidden ${isActive ? "bg-[#ECFDF5] text-[#166534]" : "text-gray-500 hover:bg-white/50"}`}>
-                    <Map className="w-5 h-5 shrink-0" />
-                    <span className="font-medium opacity-0 group-hover:opacity-100 transition-opacity text-sm">Fields</span>
-                </NavLink>
+
                 <NavLink to="/dashboard?tab=history" className={({ isActive }) => `flex items-center gap-4 p-2.5 rounded-full transition-colors whitespace-nowrap overflow-hidden ${isActive ? "bg-[#ECFDF5] text-[#166534]" : "text-gray-500 hover:bg-white/50"}`}>
                     <History className="w-5 h-5 shrink-0" />
                     <span className="font-medium opacity-0 group-hover:opacity-100 transition-opacity text-sm">History</span>
