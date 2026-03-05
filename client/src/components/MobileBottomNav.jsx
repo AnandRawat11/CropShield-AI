@@ -3,7 +3,8 @@ import {
     LayoutDashboard,
     History,
     Map,
-    Camera
+    Camera,
+    Sprout
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +25,12 @@ const NAV_ITEMS = [
         fallback: "Fields",
         icon: Map,
         to: "/dashboard?tab=map",
+    },
+    {
+        labelKey: "nav.guide",
+        fallback: "Guide",
+        icon: Sprout,
+        to: "/guide",
     },
     {
         labelKey: "nav.history",
