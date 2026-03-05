@@ -6,7 +6,7 @@ import API from "../services/api";
 import {
     LayoutDashboard, Map, History, Settings, LogOut,
     Search, Bell, Plus, Upload, Camera, FileText,
-    Leaf, CheckCircle2, AlertTriangle, Clock, TrendingUp, Info, Shield, Droplets, Droplet, Stethoscope, Loader2, X, CloudSun, Users, Image, Zap
+    Leaf, CheckCircle2, AlertTriangle, Clock, TrendingUp, Info, Shield, Droplets, Droplet, Stethoscope, Loader2, X, CloudSun, Users, Image, Zap, Sprout
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
