@@ -16,6 +16,12 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
+import dripIrrigationImg from "../assets/guide/drip_irrigation.png";
+import cropRotationImg from "../assets/guide/crop_rotation.png";
+import pestControlImg from "../assets/guide/pest_control.png";
+import soilHealthImg from "../assets/guide/soil_health.png";
+import blightPreventionImg from "../assets/guide/blight_prevention.png";
+
 /* ─── DATA SOURCE ─── */
 const TECHNIQUES = [
     {
@@ -32,7 +38,7 @@ const TECHNIQUES = [
             "Set up a timer or sensor for automated scheduling."
         ],
         videoUrl: "https://www.youtube.com/embed/2vLPaB8e6HM",
-        image: "https://images.unsplash.com/photo-1592919016381-807908c07bcb?auto=format&fit=crop&q=80&w=800"
+        image: dripIrrigationImg
     },
     {
         id: "crop-rotation",
@@ -48,7 +54,7 @@ const TECHNIQUES = [
             "Include a fallow or cover crop period if possible."
         ],
         videoUrl: "https://www.youtube.com/embed/j_n4XmN-VCo",
-        image: "https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&q=80&w=800"
+        image: cropRotationImg
     },
     {
         id: "organic-pest-control",
@@ -64,7 +70,7 @@ const TECHNIQUES = [
             "Maintain farm cleanliness to remove breeding grounds."
         ],
         videoUrl: "https://www.youtube.com/embed/7Vp1vS-o62E",
-        image: "https://images.unsplash.com/photo-1599839575945-a9a5af0c3fe5?auto=format&fit=crop&q=80&w=800"
+        image: pestControlImg
     },
     {
         id: "soil-health",
@@ -80,7 +86,7 @@ const TECHNIQUES = [
             "Avoid excessive tilling to protect soil structure."
         ],
         videoUrl: "https://www.youtube.com/embed/PstscA1l9hQ",
-        image: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&q=80&w=800"
+        image: soilHealthImg
     },
     {
         id: "leaf-blight-prevention",
@@ -96,7 +102,7 @@ const TECHNIQUES = [
             "Use resistant crop varieties specifically bred for your region."
         ],
         videoUrl: "https://www.youtube.com/embed/5O36X8iAnLw",
-        image: "https://images.unsplash.com/photo-1592323860710-85fbd296996d?auto=format&fit=crop&q=80&w=800"
+        image: blightPreventionImg
     }
 ];
 
