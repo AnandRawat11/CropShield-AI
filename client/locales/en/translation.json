@@ -6,6 +6,10 @@
         "login": "Login",
         "signUp": "Sign Up",
         "dashboard": "Dashboard",
+        "history": "History",
+        "fieldMap": "Field Map",
+        "analytics": "Analytics",
+        "settings": "Settings",
         "logout": "Logout",
         "aiOnline": "AI Diagnostic Engine Online"
     },

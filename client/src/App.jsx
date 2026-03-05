@@ -6,9 +6,11 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ScanCrop from "./pages/ScanCrop";
 import Navbar from "./components/Navbar";
+import MobileBottomNav from "./components/MobileBottomNav";
 
 import OAuthSuccess from "./pages/OAuthSuccess";
 import ProtectedRoute from "./components/ProtectedRoute";
+
 
 function App() {
   return (
@@ -39,6 +41,7 @@ function App() {
           }
         />
       </Routes>
+      <MobileBottomNav />
     </BrowserRouter>
   );
 }

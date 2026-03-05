@@ -6,3 +6,39 @@
 body {
   font-family: 'Inter', 'Noto Sans Devanagari', sans-serif;
 }
+
+/* Scan-line animation for the Leaf Analysis Input panel */
+@keyframes scanDown {
+  0% {
+    top: 0%;
+  }
+
+  100% {
+    top: 100%;
+  }
+}
+
+/* High-tech AI Camera Laser Scan */
+@keyframes laserScan {
+  0% {
+    top: 5%;
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    top: 95%;
+    opacity: 0;
+  }
+}
+
+.animate-laser {
+  animation: laserScan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}

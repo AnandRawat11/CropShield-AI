@@ -6,6 +6,10 @@
         "login": "लॉगिन",
         "signUp": "साइन अप",
         "dashboard": "डॅशबोर्ड",
+        "history": "इतिहास",
+        "fieldMap": "शेत नकाशा",
+        "analytics": "विश्लेषण",
+        "settings": "सेटिंग्ज",
         "logout": "लॉगआउट",
         "aiOnline": "AI निदान इंजिन ऑनलाइन"
     },

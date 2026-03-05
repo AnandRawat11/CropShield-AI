@@ -349,10 +349,10 @@ export default function Dashboard() {
     <div className="min-h-screen bg-[#f8fafc] text-gray-900 font-sans">
 
       {/* ================= TOP NAVIGATION BAR ================= */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm px-6 py-4 flex items-center justify-between">
+      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm px-6 py-2.5 h-14 flex items-center justify-between">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-          <img src="/logo.png" alt="CropShield-AI" className="h-9 w-auto" />
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
+          <img src="/logo.png" alt="CropShield-AI" className="h-6 w-auto" />
+          <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700">
             CropShield AI
           </span>
         </div>
@@ -360,25 +360,25 @@ export default function Dashboard() {
         <div className="flex items-center gap-6">
           <button
             onClick={() => { const langs = ["en", "hi", "mr"]; const next = langs[(langs.indexOf(i18n.language) + 1) % langs.length]; i18n.changeLanguage(next); localStorage.setItem("cropshield_lang", next); }}
-            className="text-gray-500 hover:text-green-600 transition flex items-center gap-1 text-sm font-medium"
+            className="text-gray-500 hover:text-green-600 transition flex items-center gap-1 text-[13px] font-medium"
           >
             <Globe className="w-4 h-4" />
             <span>{i18n.language.toUpperCase()}</span>
           </button>
 
           <button className="relative text-gray-500 hover:text-green-600 transition p-2 rounded-full hover:bg-green-50">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+            <Bell className="w-4 h-4" />
+            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full border border-white"></span>
           </button>
 
           <div className="relative group cursor-pointer">
             <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
-              <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold border border-green-200">
+              <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold border border-green-200 text-xs">
                 {user.name?.charAt(0).toUpperCase()}
               </div>
               <div className="hidden md:block">
-                <p className="text-sm font-semibold text-gray-800 leading-tight">{user.name}</p>
-                <p className="text-xs text-gray-500">{user.plan} {t("dashboard.plan")}</p>
+                <p className="text-[13px] font-semibold text-gray-800 leading-tight">{user.name}</p>
+                <p className="text-[10px] text-gray-500">{user.plan} {t("dashboard.plan")}</p>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </div>
