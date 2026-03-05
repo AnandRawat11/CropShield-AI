@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ScanCrop from "./pages/ScanCrop";
+import SmartFarmingGuide from "./pages/SmartFarmingGuide";
 import Navbar from "./components/Navbar";
 import MobileBottomNav from "./components/MobileBottomNav";
 
@@ -37,6 +38,15 @@ function App() {
           element={
             <ProtectedRoute>
               <ScanCrop />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/guide"
+          element={
+            <ProtectedRoute>
+              <SmartFarmingGuide />
             </ProtectedRoute>
           }
         />

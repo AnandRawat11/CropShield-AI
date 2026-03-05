@@ -185,15 +185,19 @@ const Navbar = () => {
               )}
               <NavLink
                 to="/dashboard"
-                className={`text-sm font-bold transition-colors ${isLightPage ? "text-gray-700 hover:text-green-600" : "text-[#1b5e20] hover:text-[#2e7d32]"
-                  }`}
+                className={`text-sm font-bold transition-colors ${isLightPage ? "text-gray-700 hover:text-green-600" : "text-[#1b5e20] hover:text-[#2e7d32]"}`}
               >
                 {t("nav.dashboard")}
               </NavLink>
+              <NavLink
+                to="/guide"
+                className={`text-sm font-bold transition-colors ${isLightPage ? "text-gray-700 hover:text-green-600" : "text-[#1b5e20] hover:text-[#2e7d32]"}`}
+              >
+                Guide
+              </NavLink>
               <button
                 onClick={logout}
-                className={`transition-colors flex items-center ${isLightPage ? "text-gray-500 hover:text-red-500" : "text-[#1b5e20] hover:text-[#2e7d32]"
-                  }`}
+                className={`transition-colors flex items-center ${isLightPage ? "text-gray-500 hover:text-red-500" : "text-[#1b5e20] hover:text-[#2e7d32]"}`}
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -300,12 +304,19 @@ const Navbar = () => {
                 >
                   {t("nav.dashboard")}
                 </NavLink>
+                <NavLink
+                  to="/guide"
+                  className="bg-green-50 py-3.5 rounded-2xl text-[#166534] font-bold text-sm text-center border border-green-100"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Farming Guide
+                </NavLink>
               </div>
             )}
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </nav >
   );
 };
 

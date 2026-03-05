@@ -63,6 +63,10 @@ function DesktopSidebar({ onLogout, user }) {
                     <History className="w-5 h-5 shrink-0" />
                     <span className="font-medium opacity-0 group-hover:opacity-100 transition-opacity text-sm">History</span>
                 </NavLink>
+                <NavLink to="/guide" className={({ isActive }) => `flex items-center gap-4 p-2.5 rounded-full transition-colors whitespace-nowrap overflow-hidden ${isActive ? "bg-[#ECFDF5] text-[#166534]" : "text-gray-500 hover:bg-white/50"}`}>
+                    <Sprout className="w-5 h-5 shrink-0" />
+                    <span className="font-medium opacity-0 group-hover:opacity-100 transition-opacity text-sm">Farming Guide</span>
+                </NavLink>
                 <NavLink to="/dashboard" end className={({ isActive }) => `flex items-center gap-4 p-2.5 rounded-full transition-colors whitespace-nowrap overflow-hidden ${isActive ? "bg-[#ECFDF5] text-[#166534]" : "text-gray-500 hover:bg-white/50"}`}>
                     <Settings className="w-5 h-5 shrink-0" />
                     <span className="font-medium opacity-0 group-hover:opacity-100 transition-opacity text-sm">Dashboard</span>
@@ -347,12 +351,12 @@ export default function ScanCrop() {
             {/* ── MOBILE HEADER (Hidden on LG) ── */}
             <div className="lg:hidden">
                 <header className="flex items-center justify-between p-3.5 bg-transparent border-b border-white/20">
-                    <div className="flex items-center gap-2.5">
+                    <Link to="/" className="flex items-center gap-2.5">
                         <img src="/logo.png" alt="CropShield AI" className="h-7 w-auto object-contain" />
                         <div>
                             <h1 className="font-bold text-[17px] leading-none text-slate-900 tracking-tight">CropShield AI</h1>
                         </div>
-                    </div>
+                    </Link>
                     <div className="flex items-center gap-3">
                         <div className="relative">
                             <Bell className="w-5 h-5 text-slate-600" />
@@ -528,6 +532,9 @@ export default function ScanCrop() {
 
                                         <button className="w-full mt-6 bg-[#0F172A] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors">
                                             <FileText className="w-4 h-4" /> Save Report to History
+                                        </button>
+                                        <button onClick={() => navigate("/guide")} className="w-full mt-3 bg-emerald-50 text-emerald-700 py-4 rounded-xl font-bold border border-emerald-100 flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors">
+                                            <Sprout className="w-4 h-4" /> Learn Prevention Methods
                                         </button>
                                         <button onClick={() => { /* Quick reset for new scan */ window.location.reload() }} className="w-full mt-3 bg-white text-slate-500 py-3 rounded-xl font-bold border-2 border-slate-100 flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
                                             <X className="w-4 h-4" /> Close & Scan Again
@@ -810,6 +817,14 @@ export default function ScanCrop() {
                                                 {treatment.prevention}
                                             </AccordionSection>
                                         )}
+                                    </div>
+                                    <div className="mt-8 flex flex-col gap-3">
+                                        <button className="w-full bg-[#166534] text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#14532D] transition-colors shadow-lg shadow-green-900/10">
+                                            <FileText className="w-4 h-4" /> Save Detailed Report
+                                        </button>
+                                        <button onClick={() => navigate("/guide")} className="w-full bg-white text-[#166534] py-3.5 rounded-xl font-bold border border-[#166534]/20 flex items-center justify-center gap-2 hover:bg-green-50 transition-colors">
+                                            <Sprout className="w-4 h-4" /> Learn Prevention & Techniques
+                                        </button>
                                     </div>
                                 </>
                             )}
