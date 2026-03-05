@@ -110,6 +110,7 @@ export default function ScanCrop() {
 
     // Live Camera state
     const [isCameraOpen, setIsCameraOpen] = useState(false);
+    const [isTorchOn, setIsTorchOn] = useState(false);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const streamRef = useRef(null);
@@ -140,6 +141,26 @@ export default function ScanCrop() {
             streamRef.current = null;
         }
         setIsCameraOpen(false);
+        setIsTorchOn(false);
+    };
+
+    const toggleTorch = async () => {
+        if (!streamRef.current) return;
+        try {
+            const track = streamRef.current.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            if (!capabilities.torch) {
+                console.warn("Torch not supported on this device/track");
+                return;
+            }
+            const nextMode = !isTorchOn;
+            await track.applyConstraints({
+                advanced: [{ torch: nextMode }]
+            });
+            setIsTorchOn(nextMode);
+        } catch (err) {
+            console.error("Failed to toggle torch", err);
+        }
     };
 
     const captureImage = () => {
@@ -176,8 +197,11 @@ export default function ScanCrop() {
     useEffect(() => {
         const fetchWeather = async (lat, lon) => {
             try {
+                console.log(`Fetching weather for: ${lat}, ${lon}`);
                 const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                if (!res.ok) throw new Error("Weather API limit or error");
                 const data = await res.json();
+
                 if (data.current_weather) {
                     const temp = Math.round(data.current_weather.temperature);
                     const code = data.current_weather.weathercode;
@@ -191,6 +215,7 @@ export default function ScanCrop() {
                     setWeather({ temp: `${temp}°C`, desc, icon });
                 }
             } catch (err) {
+                console.error("Weather fetch failed:", err);
                 setWeather({ temp: "--", desc: "Unavailable", icon: "☁️" });
             }
         };
@@ -198,13 +223,16 @@ export default function ScanCrop() {
         const fetchByIP = async () => {
             try {
                 const res = await fetch('https://ipapi.co/json/');
+                if (!res.ok) throw new Error("IP Geolocation failed");
                 const data = await res.json();
                 if (data.latitude && data.longitude) {
                     await fetchWeather(data.latitude, data.longitude);
                 } else {
-                    setWeather({ temp: "--", desc: "No GPS", icon: "☁️" });
+                    console.warn("No coordinates found in IP data");
+                    setWeather({ temp: "--", desc: "Region Check", icon: "☁️" });
                 }
             } catch (err) {
+                console.error("IP Geolocation fetch error:", err);
                 setWeather({ temp: "--", desc: "No GPS", icon: "☁️" });
             }
         };
@@ -212,8 +240,11 @@ export default function ScanCrop() {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
-                (err) => fetchByIP(),
-                { timeout: 5000, enableHighAccuracy: false }
+                (err) => {
+                    console.warn("Geolocation denied/failed, falling back to IP:", err.message);
+                    fetchByIP();
+                },
+                { timeout: 8000, enableHighAccuracy: false }
             );
         } else {
             fetchByIP();
@@ -639,8 +670,8 @@ export default function ScanCrop() {
 
                                         {/* Controls Bar */}
                                         <div className="absolute bottom-4 left-4 right-4 z-20 flex justify-between items-center">
-                                            <button className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 text-white hover:bg-white/30 transition-colors">
-                                                <Zap className="w-5 h-5" />
+                                            <button onClick={toggleTorch} className={`w-12 h-12 rounded-full transition-all duration-300 flex items-center justify-center border ${isTorchOn ? "bg-yellow-400 text-black border-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.5)]" : "bg-white/20 backdrop-blur-md text-white border-white/20 hover:bg-white/30"}`}>
+                                                <Zap className={`w-5 h-5 ${isTorchOn ? "fill-current" : ""}`} />
                                             </button>
 
                                             <button
@@ -862,8 +893,8 @@ export default function ScanCrop() {
 
                     {/* Bottom Controls Bar */}
                     <div className="absolute bottom-0 left-0 right-0 px-8 pb-safe pt-safe mb-8 z-20 flex justify-between items-center">
-                        <button className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-lg flex items-center justify-center border border-white/20 shadow-lg text-white hover:bg-white/20 transition-colors active:scale-95">
-                            <Zap className="w-6 h-6" />
+                        <button onClick={toggleTorch} className={`w-14 h-14 rounded-full transition-all duration-300 flex items-center justify-center border shadow-lg active:scale-95 ${isTorchOn ? "bg-yellow-400 text-black border-yellow-300 shadow-[0_0_20px_rgba(250,204,21,0.6)]" : "bg-white/10 backdrop-blur-lg text-white border-white/20 hover:bg-white/20"}`}>
+                            <Zap className={`w-6 h-6 ${isTorchOn ? "fill-current" : ""}`} />
                         </button>
 
                         <button
