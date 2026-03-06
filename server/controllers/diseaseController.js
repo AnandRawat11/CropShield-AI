@@ -57,8 +57,15 @@ const detectDisease = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Backend Error:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("❌ [diseaseController] Detection Failed:", error.message);
+    if (error.stack) {
+      console.error("Stack trace:", error.stack.split('\n').slice(0, 3).join('\n'));
+    }
+
+    const statusCode = error.message.includes("available") || error.message.includes("warming up") ? 503 : 500;
+    res.status(statusCode).json({
+      error: error.message || "An unexpected error occurred during crop analysis."
+    });
   }
 };
 

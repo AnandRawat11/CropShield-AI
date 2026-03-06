@@ -7,10 +7,16 @@ const FormData = require('form-data');
  * lang = "en" | "hi" | "mr"
  */
 const callAI = async (imageUrl, lang = "en") => {
-  const ai = new GoogleGenAI({});
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
+    console.error("[aiService] ❌ GEMINI_API_KEY or GOOGLE_API_KEY is missing from environment variables!");
+    throw new Error("AI analysis service temporarily unavailable (API key missing).");
+  }
+  const ai = new GoogleGenAI(apiKey);
 
   try {
     // 1️⃣ Fetch image
+    console.log("[aiService] 🚀 Starting Hybrid AI Pipeline...");
     console.log("[aiService] Step 1: Fetching image from:", imageUrl);
     let imageBuffer;
     if (imageUrl.startsWith("http")) {
@@ -36,13 +42,9 @@ const callAI = async (imageUrl, lang = "en") => {
     const AI_API_URL = process.env.AI_API_URL || "http://127.0.0.1:8000";
     console.log("[aiService] Step 2: Calling AI API at:", AI_API_URL + "/predict");
 
-    if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
-      console.warn("[aiService] ⚠️  GEMINI_API_KEY / GOOGLE_API_KEY not found in env!");
-    }
-
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-    const WARM_UP_LIMIT_MS = 120000;
-    const POLL_INTERVAL_MS = 5000;
+    const WARM_UP_LIMIT_MS = 45000; // Reduced from 120s to 45s
+    const POLL_INTERVAL_MS = 3000;  // More frequent polling
     const warmStart = Date.now();
     let apiAlive = false;
 
@@ -59,7 +61,10 @@ const callAI = async (imageUrl, lang = "en") => {
       }
     }
 
-    if (!apiAlive) throw new Error("AI API did not become available within timeout");
+    if (!apiAlive) {
+      console.error("[aiService] ❌ AI API health check failed after", WARM_UP_LIMIT_MS, "ms");
+      throw new Error("AI API did not become available within timeout. It might be experiencing a cold start.");
+    }
 
     let pythonResponse;
     try {
@@ -159,7 +164,7 @@ Respond ONLY in ${langName}. All JSON field values must be in ${langName}.
     const base64Image = imageBuffer.toString("base64");
 
     const geminiResponse = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.5-flash', // Verified available model
       contents: [{
         role: 'user',
         parts: [

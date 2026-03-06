@@ -291,15 +291,33 @@ export default function ScanCrop() {
         }, 8000);
 
         try {
-            const res = await detectDisease(formData);
+            // Add a 30-second timeout for the scan request
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+                console.warn("[ScanCrop] Request timed out after 30 seconds");
+            }, 30000);
+
+            const res = await detectDisease(formData, { signal: controller.signal });
+            clearTimeout(timeoutId);
             setResult(res.data);
         } catch (err) {
-            const msg = err.response?.data?.error || err.message || "";
-            setError(
-                msg.includes("cold-start") || msg.includes("AI API did not become")
-                    ? t("scan.coldStartError", "AI server is warming up. Please retry in 30 seconds.")
-                    : msg || t("scan.genericError", "Scan failed. Please try again.")
-            );
+            console.error("[ScanCrop] Error:", err);
+
+            if (err.name === "AbortError" || err.code === "ECONNABORTED") {
+                setError(t("scan.timeoutError", "Analysis is taking longer than expected. Please try again or upload a smaller image."));
+            } else {
+                const msg = err.response?.data?.error || err.message || "";
+                if (msg.includes("cold-start") || msg.includes("AI API did not become") || err.response?.status === 503) {
+                    setError(t("scan.coldStartError", "AI server is warming up. Please retry in 30 seconds."));
+                } else if (err.response?.status === 413) {
+                    setError(t("scan.sizeError", "Image is too large. Please upload an image under 10MB."));
+                } else if (msg.toLowerCase().includes("api key") || msg.toLowerCase().includes("unavailable")) {
+                    setError(t("scan.serviceError", "AI analysis service temporarily unavailable."));
+                } else {
+                    setError(msg || t("scan.genericError", "Scan failed. Please check your connection and try again."));
+                }
+            }
         } finally {
             clearInterval(msgTimer);
             setLoading(false);

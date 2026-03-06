@@ -38,8 +38,8 @@ API.interceptors.response.use(
 // Named exports
 export const loginUser = (data) => API.post("/auth/login", data);
 export const registerUser = (data) => API.post("/auth/register", data);
-export const detectDisease = (formData) =>
-  API.post("/disease/detect", formData);
+export const detectDisease = (formData, config = {}) =>
+  API.post("/disease/detect", formData, config);
 
 // ✅ DEFAULT EXPORT (THIS FIXES YOUR ERROR)
 export default API;

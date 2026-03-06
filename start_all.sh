@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR" || exit
+
 # Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -62,7 +66,9 @@ if [ ! -d "node_modules" ]; then
     echo "Installing server dependencies..."
     npm install
 fi
-npm start &
+
+echo "Starting Server in dev mode..."
+npm run dev &
 SERVER_PID=$!
 cd ..
 
