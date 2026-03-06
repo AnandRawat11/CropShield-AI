@@ -290,7 +290,7 @@ export default function ScanCrop() {
         formData.append("lang", i18n.language);
 
         setLoading(true);
-        setLoadingMsg(t("scan.analyzing", "Analyzing…"));
+        setLoadingMsg("Scanning crop disease using AI...");
         setError(""); setResult(null);
 
         const msgTimer = setInterval(() => {
@@ -302,12 +302,12 @@ export default function ScanCrop() {
         }, 8000);
 
         try {
-            // Add a 30-second timeout for the scan request
+            // Add a 60-second timeout for the scan request to mitigate cold start
             const controller = new AbortController();
             const timeoutId = setTimeout(() => {
                 controller.abort();
-                console.warn("[ScanCrop] Request timed out after 30 seconds");
-            }, 30000);
+                console.warn("[ScanCrop] Request timed out after 60 seconds");
+            }, 60000);
 
             const res = await detectDisease(formData, { signal: controller.signal });
             clearTimeout(timeoutId);
@@ -316,17 +316,17 @@ export default function ScanCrop() {
             console.error("[ScanCrop] Error:", err);
 
             if (err.name === "AbortError" || err.code === "ECONNABORTED") {
-                setError(t("scan.timeoutError", "Analysis is taking longer than expected. Please try again or upload a smaller image."));
+                setError(t("scan.timeoutError", "AI analysis is taking longer than expected. Please try again."));
             } else {
                 const msg = err.response?.data?.error || err.message || "";
                 if (msg.includes("cold-start") || msg.includes("AI API did not become") || err.response?.status === 503) {
-                    setError(t("scan.coldStartError", "AI server is warming up. Please retry in 30 seconds."));
+                    setError(t("scan.coldStartError", "AI server is warming up. Please retry in a few moments."));
                 } else if (err.response?.status === 413) {
                     setError(t("scan.sizeError", "Image is too large. Please upload an image under 10MB."));
-                } else if (msg.toLowerCase().includes("api key") || msg.toLowerCase().includes("unavailable")) {
-                    setError(t("scan.serviceError", "AI analysis service temporarily unavailable."));
+                } else if (msg.toLowerCase().includes("api key") || msg.toLowerCase().includes("unavailable") || msg.includes("failed")) {
+                    setError(t("scan.serviceError", "Crop analysis service is temporarily unavailable."));
                 } else {
-                    setError(msg || t("scan.genericError", "Scan failed. Please check your connection and try again."));
+                    setError(t("scan.genericError", "Crop analysis service is temporarily unavailable."));
                 }
             }
         } finally {

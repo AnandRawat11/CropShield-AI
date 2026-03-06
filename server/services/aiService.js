@@ -40,6 +40,7 @@ const callAI = async (imageUrl, lang = "en") => {
 
     // 2️⃣ Warm-up poll then call Python ML model
     const AI_API_URL = process.env.AI_API_URL || "http://127.0.0.1:8000";
+    console.log("Image sent to ML service");
     console.log("[aiService] Step 2: Calling AI API at:", AI_API_URL + "/predict");
 
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -82,6 +83,7 @@ const callAI = async (imageUrl, lang = "en") => {
     }
 
     const pythonResult = pythonResponse.data;
+    console.log("ML response received");
     console.log("[aiService] Step 2 OK — Python ML Result:", pythonResult);
 
     const isPlant = pythonResult.disease && !pythonResult.disease.includes("Not a Plant");

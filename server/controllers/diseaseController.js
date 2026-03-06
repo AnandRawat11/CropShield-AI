@@ -3,6 +3,7 @@ const DiseaseRecord = require("../models/DiseaseRecord");
 
 const detectDisease = async (req, res) => {
   try {
+    console.log("Scan request received");
     if (!req.file) {
       return res.status(400).json({ error: "No image uploaded" });
     }
@@ -41,6 +42,8 @@ const detectDisease = async (req, res) => {
       treatment: aiResult.treatment,  // structured object
       explanation: aiResult.explanation
     });
+
+    console.log("Result returned to frontend");
 
     // API response
     res.json({

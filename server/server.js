@@ -52,6 +52,10 @@ app.get("/", (req, res) => {
   res.send("Backend working");
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).send("Backend service running");
+});
+
 app.use(express.json());
 
 app.use(

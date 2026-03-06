@@ -9,7 +9,7 @@ def home():
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ML service running"}
 
 @app.post("/predict")
 async def predict(image: UploadFile = File(...)):

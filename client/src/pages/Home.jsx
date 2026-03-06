@@ -20,6 +20,12 @@ export default function GardenTreeLanding() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  // Wake up Render services on initial load to mitigate cold start delays
+  useEffect(() => {
+    fetch("https://cropshield-backend.onrender.com/health").catch(() => { });
+    fetch("https://cropshield-ai-api.onrender.com/health").catch(() => { });
+  }, []);
+
   const stats = [
     { value: "95%", label: t("home.stats.accuracy") },
     { value: "5+", label: t("home.stats.diseases") },
