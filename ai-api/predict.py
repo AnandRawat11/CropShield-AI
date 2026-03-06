@@ -31,7 +31,7 @@ INDEX_PATH         = "model/class_indices.json"
 #    image is likely not a crop leaf.
 # 3. This removes a full 224x224 MobileNetV2 forward pass on every
 #    inference, cutting latency roughly in half.
-CONFIDENCE_THRESHOLD = 0.30  # Reject if max softmax < this value
+CONFIDENCE_THRESHOLD = 0.15  # Lowered from 0.30 to reduce false rejections
 
 # ─── Load Model & Class Names ─────────────────────────────────────────────────
 print("Loading EfficientNetB0 disease model...")

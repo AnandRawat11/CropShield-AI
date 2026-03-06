@@ -119,9 +119,20 @@ export default function ScanCrop() {
     /* ── Live Camera Functions ── */
     const startCamera = async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment" }
-            });
+            // First try strict environment mode
+            let stream;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { exact: "environment" } }
+                });
+            } catch (strictErr) {
+                // Fallback to preferred or any available camera if exact fails
+                console.log("Strict environment request failed, falling back to any available camera");
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" }
+                });
+            }
+
             streamRef.current = stream;
             setIsCameraOpen(true);
             setTimeout(() => {
@@ -132,7 +143,7 @@ export default function ScanCrop() {
             }, 100);
         } catch (err) {
             console.error("Camera access denied or unavailable", err);
-            setError("Camera access denied or unvailable. Check permissions.");
+            setError("Camera access denied or unavailable. Check permissions.");
         }
     };
 
@@ -176,7 +187,7 @@ export default function ScanCrop() {
             canvas.toBlob((blob) => {
                 if (blob) {
                     const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
-                    stopCamera();
+                    // Do not stop the camera immediately to show a "freezing" or "processing" effect in the HUD
 
                     // Directly handle the file to trigger auto-analysis just like standard uploads
                     if (typeof handleFile === "function") {
@@ -336,7 +347,7 @@ export default function ScanCrop() {
     /* Derived result values */
     const isQualityError =
         !result?.disease ||
-        result.disease.confidence < 0.15 ||
+        result.disease.confidence < 0.10 ||
         result.disease.disease === "Not a Crop" ||
         result.disease.disease === "Unknown / Unclear" ||
         result.disease.disease?.startsWith("Not a Plant");
@@ -660,8 +671,22 @@ export default function ScanCrop() {
                                             className="absolute inset-0 w-full h-full object-cover"
                                         />
 
+                                        {/* Captured Image Overlay during analysis */}
+                                        {loading && preview && (
+                                            <div className="absolute inset-0 z-10">
+                                                <img src={preview} className="w-full h-full object-cover brightness-75 transition-opacity duration-500" />
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 backdrop-blur-[2px]">
+                                                    <Loader2 className="w-12 h-12 animate-spin text-white mb-3" />
+                                                    <p className="text-white font-bold text-sm tracking-widest uppercase animate-pulse">{loadingMsg}</p>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Close Button Top-Right */}
-                                        <button onClick={stopCamera} className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white hover:bg-white/20 transition-colors">
+                                        <button
+                                            onClick={() => { stopCamera(); setResult(null); setError(""); }}
+                                            className="absolute top-4 right-4 z-30 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white hover:bg-white/20 transition-colors"
+                                        >
                                             <X className="w-5 h-5 shadow-sm" />
                                         </button>
 
@@ -698,12 +723,17 @@ export default function ScanCrop() {
 
                                             <button
                                                 onClick={captureImage}
-                                                className="w-16 h-16 rounded-full border-[3px] border-white shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-center justify-center active:scale-95 transition-transform"
+                                                disabled={loading}
+                                                className={`w-16 h-16 rounded-full border-[3px] border-white shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-center justify-center active:scale-95 transition-transform ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
                                             >
                                                 <div className="w-[52px] h-[52px] bg-white rounded-full"></div>
                                             </button>
 
-                                            <button onClick={() => { stopCamera(); fileInputRef.current?.click(); }} className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 text-white hover:bg-white/30 transition-colors">
+                                            <button
+                                                onClick={() => { stopCamera(); fileInputRef.current?.click(); }}
+                                                disabled={loading}
+                                                className={`w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 text-white hover:bg-white/30 transition-colors ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+                                            >
                                                 <Image className="w-5 h-5" />
                                             </button>
                                         </div>
