@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 // import farmerImg from "../assets/farmer.png";
 import {
   Upload, Cpu, ScanSearch, Zap, BarChart3, BarChart, Leaf, ShieldCheck, Search, Syringe, CheckCircle, Clock,
-  Target
+  Target, Mic
 } from "lucide-react";
 import { motion } from "framer-motion";
 import step1 from "../assets/img/upload.jpeg";
@@ -14,16 +14,31 @@ import step1 from "../assets/img/upload.jpeg";
 
 
 import Navbar from '../components/Navbar';
+import VoiceAssistant from '../components/VoiceAssistant';
 
 
 export default function GardenTreeLanding() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
 
   // Wake up Render services on initial load to mitigate cold start delays
+  // Also silently trigger the browser location prompt
   useEffect(() => {
     fetch("https://cropshield-backend.onrender.com/health").catch(() => { });
     fetch("https://cropshield-ai-api.onrender.com/health").catch(() => { });
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        () => {
+          console.log("Location access granted on landing.");
+        },
+        (err) => {
+          console.warn("Location access denied or unavailable on landing:", err);
+        },
+        { timeout: 10000 }
+      );
+    }
   }, []);
 
   const stats = [
@@ -147,10 +162,22 @@ export default function GardenTreeLanding() {
                 <span>{t("home.startScan")}</span>
               </button>
 
-              {/* Language Button (Adjacent below) */}
-
-
-            </div>
+              {/* Voice Assistant Button */}
+              <button
+                onClick={() => setShowVoiceAssistant(true)}
+                className="mt-6 flex items-center gap-3 px-8 md:px-14 py-3 md:py-4
+                rounded-full bg-gray-800/80 text-green-400 border border-green-500/30 text-[15px] md:text-lg font-bold
+                hover:bg-gray-700 hover:text-white transition shadow-lg shadow-green-500/10 backdrop-blur-md active:scale-95 group relative"
+              >
+                <div className="relative flex items-center justify-center">
+                  <Mic className="w-5 h-5 md:w-6 md:h-6" />
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                  </span>
+                </div>
+                <span>Ask AI Assistant</span>
+              </button>            </div>
 
           </div>
         </div>
@@ -474,6 +501,7 @@ export default function GardenTreeLanding() {
 
 
 
+      <VoiceAssistant isOpen={showVoiceAssistant} onClose={() => setShowVoiceAssistant(false)} />
     </div >
 
 

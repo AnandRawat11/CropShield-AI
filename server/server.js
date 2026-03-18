@@ -9,6 +9,7 @@ require("./config/passport");
 const authRoutes = require("./routes/authRoutes");
 
 const diseaseRoutes = require("./routes/diseaseRoutes");
+const assistantRoutes = require("./routes/assistantRoutes");
 
 const app = express();
 
@@ -56,7 +57,7 @@ app.get("/health", (req, res) => {
   res.status(200).send("Backend service running");
 });
 
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
 
 app.use(
   session({
@@ -70,6 +71,7 @@ app.use(passport.session());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/disease", diseaseRoutes);
+app.use("/api/assistant", assistantRoutes);
 
 connectDB().then(() => {
   const PORT = process.env.PORT || 5000;

@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { registerUser } from "../services/api";
+
+const LANGUAGES = [
+  { code: "en", label: "EN" },
+  { code: "hi", label: "हिं" },
+  { code: "mr", label: "मरा" },
+];
 
 /* ── shared input wrapper — defined OUTSIDE Register so React never remounts it ── */
 const Field = ({ label, name, type, placeholder, showToggle, show, onToggle, formData, onChange }) => (
@@ -49,7 +55,12 @@ const Field = ({ label, name, type, placeholder, showToggle, show, onToggle, for
 
 const Register = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const changeLanguage = (code) => {
+    i18n.changeLanguage(code);
+    localStorage.setItem("cropshield_lang", code);
+  };
 
   const [formData, setFormData] = useState({
     name: "",
@@ -245,6 +256,24 @@ const Register = () => {
             {t("register.signIn")}
           </button>
         </p>
+
+        {/* Language Switcher */}
+        <div className="flex items-center justify-center gap-2 mt-5 pt-5 border-t border-gray-100">
+          <Globe className="w-3.5 h-3.5 text-gray-400" />
+          {LANGUAGES.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => changeLanguage(lang.code)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                i18n.language === lang.code
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Footer bar ── */}
@@ -252,15 +281,15 @@ const Register = () => {
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse block" />
           <span className="text-[11px] text-white/70 uppercase tracking-widest font-medium">
-            AI Diagnostic Engine Online
+            {t("nav.aiOnline")}
           </span>
         </div>
         <div className="flex items-center gap-6">
           <button className="text-[11px] text-white/60 uppercase tracking-widest hover:text-white/90 transition">
-            Help
+            {t("register.help")}
           </button>
           <button className="text-[11px] text-white/60 uppercase tracking-widest hover:text-white/90 transition">
-            Privacy
+            {t("register.privacy")}
           </button>
         </div>
       </div>

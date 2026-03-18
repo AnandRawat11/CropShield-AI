@@ -193,7 +193,7 @@ const Navbar = () => {
                 to="/guide"
                 className={`text-sm font-bold transition-colors ${isLightPage ? "text-gray-700 hover:text-green-600" : "text-[#1b5e20] hover:text-[#2e7d32]"}`}
               >
-                Guide
+                {t("nav.guide")}
               </NavLink>
               <button
                 onClick={logout}
@@ -309,7 +309,7 @@ const Navbar = () => {
                   className="bg-green-50 py-3.5 rounded-2xl text-[#166534] font-bold text-sm text-center border border-green-100"
                   onClick={() => setMenuOpen(false)}
                 >
-                  Farming Guide
+                  {t("nav.guide")}
                 </NavLink>
               </div>
             )}

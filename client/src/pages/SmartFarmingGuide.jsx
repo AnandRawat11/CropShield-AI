@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Leaf,
     Droplets,
@@ -11,10 +11,15 @@ import {
     Search,
     ArrowRight,
     ShieldCheck,
-    ArrowLeft
+    ArrowLeft,
+    Loader2,
+    MapPin,
+    AlertCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import API from "../services/api";
 
 import dripIrrigationImg from "../assets/guide/drip_irrigation.png";
 import cropRotationImg from "../assets/guide/crop_rotation.png";
@@ -22,99 +27,94 @@ import pestControlImg from "../assets/guide/pest_control.png";
 import soilHealthImg from "../assets/guide/soil_health.png";
 import blightPreventionImg from "../assets/guide/blight_prevention.png";
 
-/* ─── DATA SOURCE ─── */
-const TECHNIQUES = [
-    {
-        id: "drip-irrigation",
-        category: "Farming Techniques",
-        title: "Drip Irrigation",
-        shortDesc: "Precise water delivery directly to plant roots to minimize waste.",
-        fullDesc: "Drip irrigation is an efficient watering system that delivers water through a network of valves, pipes, and emitters. It reduces evaporation and runoff by placing water exactly where it's needed.",
-        benefits: ["Saves up to 50% more water", "Reduces weed growth", "Improves overall crop health"],
-        steps: [
-            "Design the layout based on crop spacing.",
-            "Install main supply pipes and sub-mains.",
-            "Place emitters near the base of each plant.",
-            "Set up a timer or sensor for automated scheduling."
-        ],
-        videoUrl: "https://www.youtube.com/embed/2vLPaB8e6HM",
-        image: dripIrrigationImg
-    },
-    {
-        id: "crop-rotation",
-        category: "Farming Techniques",
-        title: "Crop Rotation",
-        shortDesc: "Switching crop types seasonally to maintain soil nutrient balance.",
-        fullDesc: "Crop rotation is the practice of planting different crops sequentially on the same plot of land to improve soil health, optimize nutrients in the soil, and combat pest and weed pressure.",
-        benefits: ["Prevents soil exhaustion", "Breaks pest life cycles", "Increases soil fertility naturally"],
-        steps: [
-            "Divide your farm into 3 or 4 plots.",
-            "Group crops by nutrient needs (e.g., Legumes, Root crops, Leafy greens).",
-            "Rotate groups clockwise each season.",
-            "Include a fallow or cover crop period if possible."
-        ],
-        videoUrl: "https://www.youtube.com/embed/j_n4XmN-VCo",
-        image: cropRotationImg
-    },
-    {
-        id: "organic-pest-control",
-        category: "Pest & Disease Prevention",
-        title: "Organic Pest Control",
-        shortDesc: "Natural methods to protect crops without harsh chemical pesticides.",
-        fullDesc: "This approach uses biological, cultural, and physical methods to manage pests while protecting the environment and human health.",
-        benefits: ["Cost-effective", "Safe for beneficial insects", "Chemical-free produce"],
-        steps: [
-            "Identify the specific pest species.",
-            "Introduce natural predators like ladybugs or lacewings.",
-            "Use neem oil or soap-based sprays as mild deterrents.",
-            "Maintain farm cleanliness to remove breeding grounds."
-        ],
-        videoUrl: "https://www.youtube.com/embed/7Vp1vS-o62E",
-        image: pestControlImg
-    },
-    {
-        id: "soil-health",
-        category: "Farming Techniques",
-        title: "Soil Health Management",
-        shortDesc: "Building rich, organic soil to support stronger, resilient crops.",
-        fullDesc: "Healthy soil is the foundation of successful farming. This involves managing the organic matter and biological activity within the dirt.",
-        benefits: ["Stronger root systems", "Better water retention", "Reduced need for fertilizers"],
-        steps: [
-            "Test soil pH and nutrient levels annually.",
-            "Apply organic compost or well-rotted manure.",
-            "Use green manure (cover crops) to add nitrogen.",
-            "Avoid excessive tilling to protect soil structure."
-        ],
-        videoUrl: "https://www.youtube.com/embed/PstscA1l9hQ",
-        image: soilHealthImg
-    },
-    {
-        id: "leaf-blight-prevention",
-        category: "Pest & Disease Prevention",
-        title: "Leaf Blight Prevention",
-        shortDesc: "Strategies to stop fungal and bacterial leaf diseases before they start.",
-        fullDesc: "Prevention is much easier than cure. This guide covers how to stop common leaf blights from destroying your harvest.",
-        benefits: ["Protects yield quality", "Reduces fungicide costs", "Prevents field-wide spread"],
-        steps: [
-            "Ensure proper spacing for air circulation.",
-            "Avoid overhead watering (use drip lines instead).",
-            "Remove and destroy any infected leaves immediately.",
-            "Use resistant crop varieties specifically bred for your region."
-        ],
-        videoUrl: "https://www.youtube.com/embed/5O36X8iAnLw",
-        image: blightPreventionImg
-    }
+/* ─── Static config: IDs, categories, images, video URLs ─── */
+const TECHNIQUE_META = [
+    { id: "drip-irrigation",           category: "catFarming", image: dripIrrigationImg,  videoUrl: "https://www.youtube.com/embed/2vLPaB8e6HM" },
+    { id: "crop-rotation",             category: "catFarming", image: cropRotationImg,     videoUrl: "https://www.youtube.com/embed/j_n4XmN-VCo" },
+    { id: "organic-pest-control",      category: "catPest",    image: pestControlImg,      videoUrl: "https://www.youtube.com/embed/7Vp1vS-o62E" },
+    { id: "soil-health",               category: "catFarming", image: soilHealthImg,       videoUrl: "https://www.youtube.com/embed/PstscA1l9hQ" },
+    { id: "leaf-blight-prevention",    category: "catPest",    image: blightPreventionImg, videoUrl: null },
+    { id: "integrated-pest-management",category: "catPest",    image: pestControlImg,      videoUrl: "https://www.youtube.com/embed/jZ_v_6pT874" },
+    { id: "rainwater-harvesting",      category: "catFarming", image: dripIrrigationImg,   videoUrl: "https://www.youtube.com/embed/PjX9G72a6hY" },
+    { id: "companion-planting",        category: "catFarming", image: cropRotationImg,     videoUrl: "https://www.youtube.com/embed/3A2XNfE6ZpI" },
+    { id: "root-rot-prevention",       category: "catPest",    image: soilHealthImg,       videoUrl: "https://www.youtube.com/embed/V0m-X0L8Pzw" },
 ];
 
 export default function SmartFarmingGuide() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [search, setSearch] = useState("");
     const [selectedTech, setSelectedTech] = useState(null);
+
+    const [personalizedGuide, setPersonalizedGuide] = useState(null);
+    const [guideLoading, setGuideLoading] = useState(true);
+    const [guideError, setGuideError] = useState("");
+
+    // Build translated techniques list
+    const TECHNIQUES = TECHNIQUE_META.map((meta) => ({
+        ...meta,
+        categoryKey: meta.category,
+        category: t(`guide.${meta.category}`),
+        title: t(`guide.techniques.${meta.id}.title`),
+        shortDesc: t(`guide.techniques.${meta.id}.shortDesc`),
+        fullDesc: t(`guide.techniques.${meta.id}.fullDesc`),
+        benefits: t(`guide.techniques.${meta.id}.benefits`, { returnObjects: true }),
+        steps: t(`guide.techniques.${meta.id}.steps`, { returnObjects: true }),
+    }));
+
+    useEffect(() => {
+        let isMounted = true;
+
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    if (!isMounted) return;
+                    try {
+                        const response = await API.post("/guide/personalized", {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude,
+                            language: "en"
+                        });
+                        if (isMounted) {
+                            if (response.data && response.data.success) {
+                                setPersonalizedGuide(response.data.data);
+                            } else {
+                                setGuideError("Failed to parse Soil AI recommendations.");
+                            }
+                            setGuideLoading(false);
+                        }
+                    } catch (err) {
+                        console.error("Personalized guide error:", err);
+                        if (isMounted) {
+                            setGuideError("Unable to retrieve recommendations right now.");
+                            setGuideLoading(false);
+                        }
+                    }
+                },
+                (err) => {
+                    console.warn("Location not granted in guide, skipping AI recommendations:", err);
+                    if (isMounted) {
+                        setGuideLoading(false);
+                    }
+                },
+                { timeout: 8000 }
+            );
+        } else {
+            setGuideLoading(false);
+        }
+
+        return () => { isMounted = false; };
+    }, []);
 
     const filteredTech = TECHNIQUES.filter(t =>
         t.title.toLowerCase().includes(search.toLowerCase()) ||
         t.category.toLowerCase().includes(search.toLowerCase())
     );
+
+    const CATEGORIES = [
+        { key: "catFarming", label: t("guide.catFarming") },
+        { key: "catPest",    label: t("guide.catPest") },
+    ];
 
     return (
         <div className="min-h-screen bg-[#FDFCF9] text-slate-800 pb-20">
@@ -126,14 +126,14 @@ export default function SmartFarmingGuide() {
                         onClick={() => navigate(-1)}
                         className="flex items-center gap-2 text-green-200 hover:text-white transition-colors mb-6 text-sm font-medium"
                     >
-                        <ArrowLeft className="w-4 h-4" /> Back to App
+                        <ArrowLeft className="w-4 h-4" /> {t("guide.backToApp")}
                     </button>
                     <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="text-4xl md:text-5xl font-black tracking-tight"
                     >
-                        Smart Farming <span className="text-green-400">Guide</span>
+                        {t("guide.heroTitle")} <span className="text-green-400">{t("guide.heroBold")}</span>
                     </motion.h1>
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}
@@ -141,14 +141,14 @@ export default function SmartFarmingGuide() {
                         transition={{ delay: 0.1 }}
                         className="mt-4 text-green-100/80 text-lg max-w-2xl"
                     >
-                        Master modern agricultural techniques and protect your crops with our expert-curated interactive learning system.
+                        {t("guide.heroSub")}
                     </motion.p>
 
                     <div className="mt-10 relative max-w-xl">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-green-200/50 w-5 h-5" />
                         <input
                             type="text"
-                            placeholder="Search techniques, pests, or diseases..."
+                            placeholder={t("guide.searchPlaceholder")}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full bg-white/10 border border-white/20 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-green-200/40 focus:outline-none focus:ring-2 focus:ring-green-400/50 backdrop-blur-md transition-all"
@@ -160,18 +160,99 @@ export default function SmartFarmingGuide() {
             {/* ── MAIN CONTENT ── */}
             <main className="max-w-7xl mx-auto px-6 -mt-8 relative z-20">
 
+                {/* Optional Personalized Context */}
+                {guideLoading && (
+                    <div className="mb-12 flex flex-col items-center justify-center py-8 bg-white/50 backdrop-blur-sm rounded-3xl border border-white/40">
+                        <Loader2 className="w-6 h-6 animate-spin text-green-500 mb-2" />
+                        <p className="text-sm text-slate-500 animate-pulse font-medium">{t("guide.checkingClimate")}</p>
+                    </div>
+                )}
+
+                {!guideLoading && personalizedGuide && (
+                    <section className="mb-16 bg-white rounded-3xl p-8 shadow-xl border border-green-100 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-green-50 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
+
+                        <div className="flex items-start justify-between mb-8 pb-6 border-b border-gray-100">
+                            <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-green-100 text-green-700 rounded-lg">
+                                        <MapPin className="w-5 h-5" />
+                                    </div>
+                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">{t("guide.personalizedTitle")}</h2>
+                                </div>
+                                <p className="text-slate-500 text-sm">{t("guide.personalizedSub")}</p>
+                            </div>
+                        </div>
+
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                            <div className="space-y-6">
+                                <div className="bg-green-50/50 p-5 rounded-2xl border border-green-100">
+                                    <h4 className="flex items-center gap-2 text-sm font-bold text-green-800 uppercase tracking-wider mb-2">
+                                        <ShieldCheck className="w-4 h-4" /> {t("guide.contextAssessed")}
+                                    </h4>
+                                    <p className="text-slate-700 text-sm">{personalizedGuide.locationContext}</p>
+                                </div>
+
+                                <div>
+                                    <h4 className="flex items-center gap-2 text-lg font-bold text-slate-800 mb-4">
+                                        <Leaf className="w-5 h-5 text-green-600" /> {t("guide.soilHealth")}
+                                    </h4>
+                                    <ul className="space-y-3">
+                                        {personalizedGuide.soilHealth?.map((req, i) => (
+                                            <li key={i} className="flex gap-3 text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl">
+                                                <span className="text-green-500 font-bold">•</span>
+                                                {req}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div>
+                                    <h4 className="flex items-center gap-2 text-lg font-bold text-slate-800 mb-4">
+                                        <Sprout className="w-5 h-5 text-amber-600" /> {t("guide.fertilizerStrategy")}
+                                    </h4>
+                                    <ul className="space-y-3">
+                                        {personalizedGuide.fertilizerGuidance?.map((fert, i) => (
+                                            <li key={i} className="flex gap-3 text-sm text-slate-600 leading-relaxed bg-amber-50/50 p-3 rounded-xl">
+                                                <span className="text-amber-500 font-bold">•</span>
+                                                {fert}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">{t("guide.suitedCrops")}</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {personalizedGuide.recommendedCrops?.map((crop, i) => (
+                                            <span key={i} className="px-3 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">
+                                                {crop}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                        </motion.div>
+                    </section>
+                )}
+
+
                 {/* Categories Section */}
-                {["Farming Techniques", "Pest & Disease Prevention"].map((cat) => {
-                    const catItems = filteredTech.filter(item => item.category === cat);
+                {CATEGORIES.map(({ key, label }) => {
+                    const catItems = filteredTech.filter(item => item.categoryKey === key);
                     if (catItems.length === 0) return null;
 
                     return (
-                        <section key={cat} className="mb-16 first:mt-0 mt-20">
+                        <section key={key} className="mb-16 first:mt-0 mt-20">
                             <div className="flex items-center gap-3 mb-8">
                                 <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-[#166534]">
-                                    {cat === "Farming Techniques" ? <Sprout className="w-6 h-6" /> : <ShieldCheck className="w-6 h-6" />}
+                                    {key === "catFarming" ? <Sprout className="w-6 h-6" /> : <ShieldCheck className="w-6 h-6" />}
                                 </div>
-                                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{cat}</h2>
+                                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{label}</h2>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -189,7 +270,7 @@ export default function SmartFarmingGuide() {
                                             <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                                             <div className="absolute bottom-4 left-4">
-                                                <span className="bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest bg-opacity-90">{item.category.split(" ")[0]}</span>
+                                                <span className="bg-green-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest bg-opacity-90">{label.split(" ")[0]}</span>
                                             </div>
                                         </div>
                                         <div className="p-6 flex-1 flex flex-col">
@@ -198,7 +279,7 @@ export default function SmartFarmingGuide() {
                                                 {item.shortDesc}
                                             </p>
                                             <button className="mt-6 flex items-center gap-2 text-[#166534] font-bold text-sm">
-                                                Learn More <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                                                {t("guide.learnMore")} <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                                             </button>
                                         </div>
                                     </motion.div>
@@ -210,7 +291,7 @@ export default function SmartFarmingGuide() {
 
                 {filteredTech.length === 0 && (
                     <div className="py-20 text-center">
-                        <p className="text-slate-400 text-lg">No techniques found matching your search.</p>
+                        <p className="text-slate-400 text-lg">{t("guide.noResults")}</p>
                     </div>
                 )}
             </main>
@@ -252,14 +333,14 @@ export default function SmartFarmingGuide() {
                                 <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
                                     <div className="space-y-8">
                                         <section>
-                                            <h4 className="text-sm font-bold text-[#166534] uppercase tracking-widest mb-3">Overview</h4>
+                                            <h4 className="text-sm font-bold text-[#166534] uppercase tracking-widest mb-3">{t("guide.overview")}</h4>
                                             <p className="text-slate-600 leading-relaxed">{selectedTech.fullDesc}</p>
                                         </section>
 
                                         <section>
-                                            <h4 className="text-sm font-bold text-[#166534] uppercase tracking-widest mb-4">Key Benefits</h4>
+                                            <h4 className="text-sm font-bold text-[#166534] uppercase tracking-widest mb-4">{t("guide.keyBenefits")}</h4>
                                             <div className="space-y-3">
-                                                {selectedTech.benefits.map((benefit, i) => (
+                                                {Array.isArray(selectedTech.benefits) && selectedTech.benefits.map((benefit, i) => (
                                                     <div key={i} className="flex items-center gap-3 bg-green-50 p-3 rounded-2xl border border-green-100/50">
                                                         <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-green-600">
                                                             <ShieldCheck className="w-4 h-4" />
@@ -273,9 +354,9 @@ export default function SmartFarmingGuide() {
 
                                     <div className="space-y-8">
                                         <section>
-                                            <h4 className="text-sm font-bold text-[#166534] uppercase tracking-widest mb-4">Step-by-Step Guide</h4>
+                                            <h4 className="text-sm font-bold text-[#166534] uppercase tracking-widest mb-4">{t("guide.stepByStep")}</h4>
                                             <div className="space-y-4">
-                                                {selectedTech.steps.map((step, i) => (
+                                                {Array.isArray(selectedTech.steps) && selectedTech.steps.map((step, i) => (
                                                     <div key={i} className="flex gap-4">
                                                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">
                                                             {i + 1}
@@ -286,27 +367,29 @@ export default function SmartFarmingGuide() {
                                             </div>
                                         </section>
 
-                                        <section>
-                                            <h4 className="text-sm font-bold text-[#166534] uppercase tracking-widest mb-4">Video Tutorial</h4>
-                                            <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm bg-slate-50 aspect-video relative">
-                                                <iframe
-                                                    width="100%"
-                                                    height="100%"
-                                                    src={selectedTech.videoUrl}
-                                                    title={selectedTech.title}
-                                                    frameBorder="0"
-                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                    allowFullScreen
-                                                ></iframe>
-                                            </div>
-                                        </section>
+                                        {selectedTech.videoUrl && (
+                                            <section>
+                                                <h4 className="text-sm font-bold text-[#166534] uppercase tracking-widest mb-4">{t("guide.videoTutorial")}</h4>
+                                                <div className="rounded-2xl overflow-hidden border border-gray-100 shadow-sm bg-slate-50 aspect-video relative">
+                                                    <iframe
+                                                        width="100%"
+                                                        height="100%"
+                                                        src={selectedTech.videoUrl}
+                                                        title={selectedTech.title}
+                                                        frameBorder="0"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowFullScreen
+                                                    ></iframe>
+                                                </div>
+                                            </section>
+                                        )}
                                     </div>
                                 </div>
 
                                 <div className="p-8 bg-slate-50 border-t border-gray-100 flex justify-end gap-4">
-                                    <button onClick={() => setSelectedTech(null)} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors">Close</button>
+                                    <button onClick={() => setSelectedTech(null)} className="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors">{t("guide.close")}</button>
                                     <button onClick={() => setSelectedTech(null)} className="px-8 py-3 rounded-xl bg-[#166534] text-white font-bold shadow-lg shadow-green-900/20 hover:bg-[#14532D] transition-colors flex items-center gap-2">
-                                        Got it, thanks! <CheckCircle2 className="w-4 h-4" />
+                                        {t("guide.gotIt")} <CheckCircle2 className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>

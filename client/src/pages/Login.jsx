@@ -1,12 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import API from "../services/api";
 
+const LANGUAGES = [
+  { code: "en", label: "EN" },
+  { code: "hi", label: "हिं" },
+  { code: "mr", label: "मरा" },
+];
+
 const Login = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const changeLanguage = (code) => {
+    i18n.changeLanguage(code);
+    localStorage.setItem("cropshield_lang", code);
+  };
   const [formData, setFormData] = useState({ identifier: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -192,6 +203,24 @@ const Login = () => {
             {t("login.startTrial")}
           </button>
         </p>
+
+        {/* Language Switcher */}
+        <div className="flex items-center justify-center gap-2 mt-5 pt-5 border-t border-gray-100">
+          <Globe className="w-3.5 h-3.5 text-gray-400" />
+          {LANGUAGES.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => changeLanguage(lang.code)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition ${
+                i18n.language === lang.code
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Footer bar (outside card) ── */}
@@ -199,7 +228,7 @@ const Login = () => {
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse block" />
           <span className="text-[11px] text-white/70 uppercase tracking-widest font-medium">
-            AI Diagnostic Engine Online
+            {t("nav.aiOnline")}
           </span>
         </div>
         <div className="flex items-center gap-6">

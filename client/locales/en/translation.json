@@ -256,5 +256,94 @@
         "en": "English",
         "hi": "हिंदी",
         "mr": "मराठी"
+    },
+    "guide": {
+        "backToApp": "Back to App",
+        "heroTitle": "Smart Farming",
+        "heroBold": "Guide",
+        "heroSub": "Master modern agricultural techniques and protect your crops with our expert-curated interactive learning system.",
+        "searchPlaceholder": "Search techniques, pests, or diseases...",
+        "checkingClimate": "Checking local climate and soil profile...",
+        "personalizedTitle": "Personalized Soil & Fertilizer Guide",
+        "personalizedSub": "Real-time localized recommendations based on your soil profile and exact coordinates.",
+        "contextAssessed": "Context Assessed",
+        "soilHealth": "Soil Health Recommendations",
+        "fertilizerStrategy": "Organic & Chemical Fertilizer Strategy",
+        "suitedCrops": "Ideally Suited Crops",
+        "catFarming": "Farming Techniques",
+        "catPest": "Pest & Disease Prevention",
+        "learnMore": "Learn More",
+        "noResults": "No techniques found matching your search.",
+        "overview": "Overview",
+        "keyBenefits": "Key Benefits",
+        "stepByStep": "Step-by-Step Guide",
+        "videoTutorial": "Video Tutorial",
+        "close": "Close",
+        "gotIt": "Got it, thanks!",
+        "techniques": {
+            "drip-irrigation": {
+                "title": "Drip Irrigation",
+                "shortDesc": "Precise water delivery directly to plant roots to minimize waste.",
+                "fullDesc": "Drip irrigation is an efficient watering system that delivers water through a network of valves, pipes, and emitters. It reduces evaporation and runoff by placing water exactly where it's needed.",
+                "benefits": ["Saves up to 50% more water", "Reduces weed growth", "Improves overall crop health"],
+                "steps": ["Design the layout based on crop spacing.", "Install main supply pipes and sub-mains.", "Place emitters near the base of each plant.", "Set up a timer or sensor for automated scheduling."]
+            },
+            "crop-rotation": {
+                "title": "Crop Rotation",
+                "shortDesc": "Switching crop types seasonally to maintain soil nutrient balance.",
+                "fullDesc": "Crop rotation is the practice of planting different crops sequentially on the same plot of land to improve soil health, optimize nutrients in the soil, and combat pest and weed pressure.",
+                "benefits": ["Prevents soil exhaustion", "Breaks pest life cycles", "Increases soil fertility naturally"],
+                "steps": ["Divide your farm into 3 or 4 plots.", "Group crops by nutrient needs (e.g., Legumes, Root crops, Leafy greens).", "Rotate groups clockwise each season.", "Include a fallow or cover crop period if possible."]
+            },
+            "organic-pest-control": {
+                "title": "Organic Pest Control",
+                "shortDesc": "Natural methods to protect crops without harsh chemical pesticides.",
+                "fullDesc": "This approach uses biological, cultural, and physical methods to manage pests while protecting the environment and human health.",
+                "benefits": ["Cost-effective", "Safe for beneficial insects", "Chemical-free produce"],
+                "steps": ["Identify the specific pest species.", "Introduce natural predators like ladybugs or lacewings.", "Use neem oil or soap-based sprays as mild deterrents.", "Maintain farm cleanliness to remove breeding grounds."]
+            },
+            "soil-health": {
+                "title": "Soil Health Management",
+                "shortDesc": "Building rich, organic soil to support stronger, resilient crops.",
+                "fullDesc": "Healthy soil is the foundation of successful farming. This involves managing the organic matter and biological activity within the dirt.",
+                "benefits": ["Stronger root systems", "Better water retention", "Reduced need for fertilizers"],
+                "steps": ["Test soil pH and nutrient levels annually.", "Apply organic compost or well-rotted manure.", "Use green manure (cover crops) to add nitrogen.", "Avoid excessive tilling to protect soil structure."]
+            },
+            "leaf-blight-prevention": {
+                "title": "Leaf Blight Prevention",
+                "shortDesc": "Strategies to stop fungal and bacterial leaf diseases before they start.",
+                "fullDesc": "Prevention is much easier than cure. This guide covers how to stop common leaf blights from destroying your harvest.",
+                "benefits": ["Protects yield quality", "Reduces fungicide costs", "Prevents field-wide spread"],
+                "steps": ["Ensure proper spacing for air circulation.", "Avoid overhead watering (use drip lines instead).", "Remove and destroy any infected leaves immediately.", "Use resistant crop varieties specifically bred for your region."]
+            },
+            "integrated-pest-management": {
+                "title": "Integrated Pest Management (IPM)",
+                "shortDesc": "A holistic strategy combining multiple methods to manage pest damage economically and safely.",
+                "fullDesc": "IPM is an ecosystem-based strategy that focuses on long-term prevention of pests or their damage through a combination of techniques such as biological control, habitat manipulation, modification of cultural practices, and use of resistant varieties.",
+                "benefits": ["Reduces environmental risk", "Slows pesticide resistance", "Lowers chemical costs"],
+                "steps": ["Monitor and identify pests accurately before acting.", "Establish an action threshold (when pest population becomes unacceptable).", "Use prevention methods first (resistant varieties, sanitation).", "Apply control methods starting with the least risky (pheromones, trapping) before chemicals."]
+            },
+            "rainwater-harvesting": {
+                "title": "Rainwater Harvesting",
+                "shortDesc": "Collecting and storing rain for agriculture to secure water during dry seasons.",
+                "fullDesc": "Rainwater harvesting involves the collection, storage, and distribution of rainwater from roofs, land surfaces, or rock catchments. It is a vital technique for farms in areas with irregular rainfall.",
+                "benefits": ["Provides a free baseline water supply", "Reduces soil erosion and flooding", "Improves groundwater recharge"],
+                "steps": ["Designate a catchment area (roofs or sloped land).", "Install a conveyance system (gutters, pipes, channels).", "Filter the water to remove debris (first-flush diverter).", "Store in covered tanks or strategically dug farm ponds/reservoirs."]
+            },
+            "companion-planting": {
+                "title": "Companion Planting",
+                "shortDesc": "Planting different crops close together to mutually benefit each other's growth and repel pests.",
+                "fullDesc": "Companion planting is a form of polyculture where two or more plant species are grown together for cultural benefits like pest control, providing habitat for beneficial insects, maximizing space, and increasing crop productivity.",
+                "benefits": ["Natural pest deterrence", "Improved pollination", "Optimized space and sunlight"],
+                "steps": ["Identify pairs that benefit each other (e.g., Tomatoes and Basil, or the 'Three Sisters': Corn, Beans, Squash).", "Avoid planting antagonistic crops together (e.g., Onions near Beans).", "Plant tall crops to provide shade for sun-sensitive, shorter crops.", "Use aromatic herbs near borders to confuse and repel insect pests."]
+            },
+            "root-rot-prevention": {
+                "title": "Root Rot Prevention",
+                "shortDesc": "Managing soil conditions and pathogens to prevent fungal decay of crop roots.",
+                "fullDesc": "Root rot is caused by a variety of fungi (like Pythium or Phytophthora) that thrive in overly wet, poorly drained soil. Once established, it is difficult to cure, making prevention the only truly effective strategy.",
+                "benefits": ["Saves entire harvests from sudden wilting", "Promotes massive root structures", "Reduces need for systemic fungicides"],
+                "steps": ["Ensure excellent soil drainage (use raised beds if necessary).", "Never over-water; allow the top layer of soil to dry slightly between watering.", "Sterilize tools between planting sessions to avoid spreading spores.", "Use beneficial soil inoculants (like Trichoderma) to outcompete pathogens."]
+            }
+        }
     }
 }
