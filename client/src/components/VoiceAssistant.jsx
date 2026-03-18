@@ -153,18 +153,32 @@ export default function VoiceAssistant({ isOpen, onClose }) {
       }
     };
 
+    const speakNativeFallback = (textToSpeak) => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const isHindi = /[\u0900-\u097F]/.test(textToSpeak);
+        const utterance = new SpeechSynthesisUtterance(textToSpeak.replace(/[*#_`]/g, ""));
+        utterance.lang = isHindi ? 'hi-IN' : 'en-IN';
+        utterance.rate = 0.95;
+        utterance.pitch = 1.05;
+        window.speechSynthesis.speak(utterance);
+      }
+    };
+
     let nextAudioPromise = null;
 
     for (let i = 0; i < sentences.length; i++) {
-      // If modal was closed or a new recording started, abort
       if (!isOpen || isListening) break; 
       
-      // Use pre-fetched promise if available, otherwise start fetch
       const audioBlob = nextAudioPromise ? await nextAudioPromise : await fetchAudio(sentences[i]);
       
-      if (!audioBlob || !isOpen || isListening) break;
+      // FALLBACK: If ElevenLabs fails (e.g. proxy blocked), use native browser speech
+      if (!audioBlob) {
+        console.warn("ElevenLabs failed, falling back to native speech synthesis.");
+        speakNativeFallback(sentences.slice(i).join(" ")); // speak the rest natively
+        break; 
+      }
 
-      // Pre-fetch the NEXT sentence while playing the current one
       if (i + 1 < sentences.length) {
         nextAudioPromise = fetchAudio(sentences[i + 1]);
       } else {
@@ -185,11 +199,15 @@ export default function VoiceAssistant({ isOpen, onClose }) {
         audio.onerror = (e) => {
           console.error("Audio playback error:", e);
           URL.revokeObjectURL(audioUrl);
+          
+          // Try native fallback if the current audio failed to play
+          speakNativeFallback(sentences[i]);
           resolve();
         };
         
         audio.play().catch(e => {
-          console.error("Audio play failed:", e);
+          console.error("Audio play failed, likely autoplay blocked:", e);
+          speakNativeFallback(sentences[i]);
           resolve();
         });
       });
