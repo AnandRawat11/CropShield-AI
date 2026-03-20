@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Globe } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Globe, ShieldCheck, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import API from "../services/api";
 
@@ -10,6 +10,60 @@ const LANGUAGES = [
   { code: "mr", label: "मरा" },
 ];
 
+/* ─── tiny helper: 6 separate OTP boxes ─── */
+const OtpInput = ({ value, onChange }) => {
+  const inputs = useRef([]);
+  const digits = value.split("").concat(Array(6).fill("")).slice(0, 6);
+
+  const handleKey = (e, idx) => {
+    if (e.key === "Backspace") {
+      const next = [...digits];
+      next[idx] = "";
+      onChange(next.join(""));
+      if (idx > 0) inputs.current[idx - 1]?.focus();
+      return;
+    }
+    if (!/^\d$/.test(e.key)) return;
+    const next = [...digits];
+    next[idx] = e.key;
+    onChange(next.join(""));
+    if (idx < 5) inputs.current[idx + 1]?.focus();
+  };
+
+  const handlePaste = (e) => {
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    onChange(pasted.padEnd(6, "").slice(0, 6));
+    inputs.current[Math.min(pasted.length, 5)]?.focus();
+    e.preventDefault();
+  };
+
+  return (
+    <div className="flex gap-2 justify-center my-1">
+      {digits.map((d, i) => (
+        <input
+          key={i}
+          ref={(el) => (inputs.current[i] = el)}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={d}
+          onChange={() => {}}
+          onKeyDown={(e) => handleKey(e, i)}
+          onPaste={handlePaste}
+          className="w-11 h-12 text-center text-xl font-bold border-2 rounded-lg outline-none transition-all"
+          style={{
+            borderColor: d ? "#3ED500" : "#e5e7eb",
+            background: d ? "#f0fce7" : "#fff",
+            color: "#18181b",
+            boxShadow: d ? "0 0 0 3px rgba(62,213,0,0.15)" : "none",
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+/* ─── main component ─── */
 const Login = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
@@ -18,18 +72,32 @@ const Login = () => {
     i18n.changeLanguage(code);
     localStorage.setItem("cropshield_lang", code);
   };
+
+  /* ── tab: "password" | "otp" ── */
+  const [tab, setTab] = useState("password");
+
+  /* ── password login state ── */
   const [formData, setFormData] = useState({ identifier: "", password: "" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  /* ── otp login state ── */
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpStep, setOtpStep] = useState("email"); // "email" | "code"
+  const [otpSuccess, setOtpSuccess] = useState("");
+
+  /* ── shared ── */
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  /* ─── password handlers ─── */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
-  const handleSubmit = async (e) => {
+  const handlePasswordLogin = async (e) => {
     e.preventDefault();
     if (!formData.identifier || !formData.password) {
       setError("All fields are required");
@@ -49,6 +117,48 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  /* ─── otp handlers ─── */
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    if (!otpEmail) { setError("Please enter your email"); return; }
+    setError("");
+    setLoading(true);
+    try {
+      const res = await API.post("/auth/send-otp", { email: otpEmail });
+      setOtpSuccess(res.data.message);
+      setOtpStep("code");
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to send OTP. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (otpCode.length < 6) { setError("Enter the 6-digit code"); return; }
+    setError("");
+    setLoading(true);
+    try {
+      const res = await API.post("/auth/verify-otp", { email: otpEmail, otp: otpCode });
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.error || "Invalid or expired OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const switchTab = (t) => {
+    setTab(t);
+    setError("");
+    setOtpStep("email");
+    setOtpCode("");
+    setOtpSuccess("");
   };
 
   return (
@@ -78,9 +188,39 @@ const Login = () => {
         </h1>
 
         {/* Tagline */}
-        <p className="text-center text-sm text-gray-500 mb-8">
+        <p className="text-center text-sm text-gray-500 mb-6">
           {t("login.tagline")}
         </p>
+
+        {/* ── Tab switcher ── */}
+        <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+          <button
+            type="button"
+            onClick={() => switchTab("password")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-all"
+            style={
+              tab === "password"
+                ? { background: "#fff", color: "#18181b", boxShadow: "0 1px 4px rgba(0,0,0,0.10)" }
+                : { color: "#6b7280" }
+            }
+          >
+            <Lock className="w-3.5 h-3.5" />
+            Password
+          </button>
+          <button
+            type="button"
+            onClick={() => switchTab("otp")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-all"
+            style={
+              tab === "otp"
+                ? { background: "#fff", color: "#18181b", boxShadow: "0 1px 4px rgba(0,0,0,0.10)" }
+                : { color: "#6b7280" }
+            }
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            OTP Login
+          </button>
+        </div>
 
         {/* Error banner */}
         {error && (
@@ -89,70 +229,146 @@ const Login = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* ═══════════════ PASSWORD TAB ═══════════════ */}
+        {tab === "password" && (
+          <form onSubmit={handlePasswordLogin} className="space-y-5">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                {t("login.email")}
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-gray-400" />
+                <input
+                  type="email"
+                  name="identifier"
+                  value={formData.identifier}
+                  onChange={handleChange}
+                  placeholder={t("login.emailPlaceholder")}
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                />
+              </div>
+            </div>
 
-          {/* Email */}
+            {/* Password */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm font-medium text-gray-700">{t("login.password")}</label>
+                <button
+                  type="button"
+                  className="text-sm font-medium hover:underline"
+                  style={{ color: "#3ED500" }}
+                >
+                  {t("login.forgot")}
+                </button>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-gray-400" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder={t("login.passwordPlaceholder")}
+                  className="w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-[15px] h-[15px]" /> : <Eye className="w-[15px] h-[15px]" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Sign In button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3.5 rounded-lg transition-opacity disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
+              style={{ background: "#3ED500" }}
+            >
+              {loading ? t("login.signingIn") : (
+                <>{t("login.signIn")} <ArrowRight className="w-4 h-4" /></>
+              )}
+            </button>
+          </form>
+        )}
+
+        {/* ═══════════════ OTP TAB ═══════════════ */}
+        {tab === "otp" && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              {t("login.email")}
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-gray-400" />
-              <input
-                type="email"
-                name="identifier"
-                value={formData.identifier}
-                onChange={handleChange}
-                placeholder={t("login.emailPlaceholder")}
-                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
-              />
-            </div>
-          </div>
+            {otpStep === "email" ? (
+              /* Step 1 — enter email */
+              <form onSubmit={handleSendOtp} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Your Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-gray-400" />
+                    <input
+                      type="email"
+                      value={otpEmail}
+                      onChange={(e) => { setOtpEmail(e.target.value); setError(""); }}
+                      placeholder="you@example.com"
+                      className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+                    />
+                  </div>
+                </div>
 
-          {/* Password */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-sm font-medium text-gray-700">{t("login.password")}</label>
-              <button
-                type="button"
-                className="text-sm font-medium hover:underline"
-                style={{ color: "#3ED500" }}
-              >
-                {t("login.forgot")}
-              </button>
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-gray-400" />
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder={t("login.passwordPlaceholder")}
-                className="w-full pl-10 pr-10 py-3 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((p) => !p)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showPassword ? <EyeOff className="w-[15px] h-[15px]" /> : <Eye className="w-[15px] h-[15px]" />}
-              </button>
-            </div>
-          </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3.5 rounded-lg transition-opacity disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
+                  style={{ background: "#3ED500" }}
+                >
+                  {loading ? "Sending…" : <><ShieldCheck className="w-4 h-4" /> Send OTP</>}
+                </button>
+              </form>
+            ) : (
+              /* Step 2 — enter OTP code */
+              <form onSubmit={handleVerifyOtp} className="space-y-5">
+                {/* Success message */}
+                <div className="text-center bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+                  <p className="text-xs text-green-700 font-medium">{otpSuccess}</p>
+                  <p className="text-xs text-green-600 mt-0.5">Sent to <strong>{otpEmail}</strong></p>
+                </div>
 
-          {/* Sign In button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3.5 rounded-lg transition-opacity disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
-            style={{ background: "#3ED500" }}
-          >
-            {loading ? t("login.signingIn") : (
-              <>{t("login.signIn")} <ArrowRight className="w-4 h-4" /></>
+                {/* OTP boxes */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
+                    Enter 6-digit code
+                  </label>
+                  <OtpInput value={otpCode} onChange={setOtpCode} />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || otpCode.length < 6}
+                  className="w-full flex items-center justify-center gap-2 text-white font-semibold py-3.5 rounded-lg transition-opacity disabled:opacity-60 disabled:cursor-not-allowed text-[15px]"
+                  style={{ background: "#3ED500" }}
+                >
+                  {loading ? "Verifying…" : <><ArrowRight className="w-4 h-4" /> Verify & Sign In</>}
+                </button>
+
+                {/* Resend */}
+                <p className="text-center text-xs text-gray-500">
+                  Didn&apos;t get it?{" "}
+                  <button
+                    type="button"
+                    onClick={() => { setOtpStep("email"); setOtpCode(""); setError(""); setOtpSuccess(""); }}
+                    className="font-medium hover:underline"
+                    style={{ color: "#3ED500" }}
+                  >
+                    Resend OTP
+                  </button>
+                </p>
+              </form>
             )}
-          </button>
-        </form>
+          </div>
+        )}
 
         {/* Divider */}
         <div className="flex items-center gap-3 my-6">

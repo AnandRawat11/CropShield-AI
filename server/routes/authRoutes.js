@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { register, login } = require("../controllers/authController");
+const { register, login, sendOtp, verifyOtp } = require("../controllers/authController");
 const auth = require("../middleware/auth");
 const User = require("../models/User");
 const passport = require("passport");
@@ -12,6 +12,8 @@ const FREE_DAILY_LIMIT = 5; // 👈 change limit here anytime
 /* ================= AUTH ================= */
 router.post("/register", register);
 router.post("/login", login);
+router.post("/send-otp", sendOtp);
+router.post("/verify-otp", verifyOtp);
 
 /* ================= GOOGLE OAUTH ================= */
 router.get(
