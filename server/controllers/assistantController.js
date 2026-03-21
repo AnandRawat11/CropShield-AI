@@ -2,13 +2,13 @@ const { processVoiceAudio, generateElevenLabsAudio } = require('../services/voic
 
 const handleVoiceQuery = async (req, res) => {
   try {
-    const { audio, mimeType, location } = req.body;
+    const { audio, mimeType, location, isFirstInteraction } = req.body;
 
     if (!audio) {
       return res.status(400).json({ success: false, message: "Audio data is required." });
     }
 
-    const aiResponse = await processVoiceAudio(audio, mimeType || "audio/webm", location);
+    const aiResponse = await processVoiceAudio(audio, mimeType || "audio/webm", location, isFirstInteraction === true);
 
     res.status(200).json({
       success: true,

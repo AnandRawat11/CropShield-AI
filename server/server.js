@@ -10,6 +10,7 @@ const authRoutes = require("./routes/authRoutes");
 
 const diseaseRoutes = require("./routes/diseaseRoutes");
 const assistantRoutes = require("./routes/assistantRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
 
@@ -72,6 +73,7 @@ app.use(passport.session());
 app.use("/api/auth", authRoutes);
 app.use("/api/disease", diseaseRoutes);
 app.use("/api/assistant", assistantRoutes);
+app.use("/api/payment", paymentRoutes);
 
 connectDB().then(() => {
   const PORT = process.env.PORT || 5000;

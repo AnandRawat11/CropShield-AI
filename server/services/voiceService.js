@@ -2,13 +2,14 @@ const { GoogleGenAI } = require('@google/genai');
 const { getWeatherContext } = require('./weatherService');
 const axios = require('axios');
 
-const processVoiceAudio = async (base64Audio, mimeType = "audio/webm", location = null) => {
+const processVoiceAudio = async (base64Audio, mimeType = "audio/webm", location = null, isFirstInteraction = false) => {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey) {
     throw new Error("AI assistant is temporarily unavailable (API key missing).");
   }
 
   const ai = new GoogleGenAI({ apiKey: apiKey });
+  console.log(`[voiceService] isFirstInteraction: ${isFirstInteraction}`);
 
   let weatherContext = "";
   if (location && location.latitude && location.longitude) {
@@ -39,6 +40,7 @@ Rules for the 'reply':
 5. Do NOT use markdown (no asterisks, hash signs, bullet points).
 6. Reply in the same language the user spoke in.
 7. CRITICAL: Use masculine grammar/tone (e.g., in Hindi use "sakta hu" instead of "sakti hu") as your voice is male.
+8. ${isFirstInteraction ? 'You may greet the farmer warmly at the start of your reply.' : 'IMPORTANT: Do NOT greet or say Namaste or any salutation — the farmer already knows you. Jump straight to answering the question.'}
 ${weatherContext}
   `.trim();
 
@@ -89,6 +91,7 @@ const generateElevenLabsAudio = async (text) => {
       {
         text: text,
         model_id: "eleven_flash_v2_5", // Optimized for low latency while supporting multilingual (Hindi/English)
+        speed: 1.15, // Slightly faster than default (1.0), range: 0.7–1.2
         voice_settings: {
           stability: 0.5,
           similarity_boost: 0.75
