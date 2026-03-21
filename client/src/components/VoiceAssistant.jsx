@@ -1,22 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, X, Loader2, Volume2, User, Square } from "lucide-react";
+import { Mic, X, Loader2, MessageCircle, ChevronLeft } from "lucide-react";
 import API from "../services/api";
 
 export default function VoiceAssistant({ isOpen, onClose }) {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState("");
-  const [aiResponse, setAiResponse] = useState("Hi there! I am your CropShield AI guide. Ask me anything about your crops, weather, or farming advice.");
+  const [aiResponse, setAiResponse] = useState("Hello 👋 I'm here to help you learn, explore new subjects, and tackle tricky questions.");
   const [error, setError] = useState("");
-  
+
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const streamRef = useRef(null);
   const currentAudioRef = useRef(null);
+  // Track whether this is the first voice interaction this session
+  const isFirstInteractionRef = useRef(true);
 
   useEffect(() => {
-    // Keep cleanup for stream if component unmounts
     return () => {
       stopRecording();
       stopAudio();
@@ -24,10 +25,15 @@ export default function VoiceAssistant({ isOpen, onClose }) {
   }, []);
 
   const stopAudio = () => {
+    // Stop ElevenLabs audio
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
       currentAudioRef.current.src = "";
       currentAudioRef.current = null;
+    }
+    // Also kill any browser speech synthesis (robotic fallback) immediately
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
     }
   };
 
@@ -36,8 +42,8 @@ export default function VoiceAssistant({ isOpen, onClose }) {
       mediaRecorderRef.current.stop();
     }
     if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
     setIsListening(false);
   };
@@ -46,7 +52,7 @@ export default function VoiceAssistant({ isOpen, onClose }) {
     if (isListening) {
       stopRecording();
     } else {
-      stopAudio(); // Stop any currently playing audio
+      stopAudio();
       setTranscript("");
       setAiResponse("");
       setError("");
@@ -55,7 +61,7 @@ export default function VoiceAssistant({ isOpen, onClose }) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         streamRef.current = stream;
-        
+
         const mediaRecorder = new MediaRecorder(stream);
         mediaRecorderRef.current = mediaRecorder;
 
@@ -66,20 +72,18 @@ export default function VoiceAssistant({ isOpen, onClose }) {
         };
 
         mediaRecorder.onstop = async () => {
-           setIsProcessing(true);
-           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-           
-           // Convert Blob to Base64
-           const reader = new FileReader();
-           reader.onloadend = async () => {
-               const base64Audio = reader.result.split(',')[1];
-               await handleProcessVoice(base64Audio, 'audio/webm');
-           };
-           reader.onerror = () => {
-               setError("Failed to process audio recording.");
-               setIsProcessing(false);
-           };
-           reader.readAsDataURL(audioBlob);
+          setIsProcessing(true);
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            const base64Audio = reader.result.split(",")[1];
+            await handleProcessVoice(base64Audio, "audio/webm");
+          };
+          reader.onerror = () => {
+            setError("Failed to process audio recording.");
+            setIsProcessing(false);
+          };
+          reader.readAsDataURL(audioBlob);
         };
 
         mediaRecorder.start();
@@ -92,73 +96,69 @@ export default function VoiceAssistant({ isOpen, onClose }) {
   };
 
   const handleProcessVoice = async (base64Audio, mimeType) => {
-     try {
-        let currentLocation = null;
-        if ("geolocation" in navigator) {
-            try {
-                currentLocation = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => resolve({ lat: position.coords.latitude, lng: position.coords.longitude }),
-                        (err) => reject(err),
-                        { timeout: 5000 }
-                    );
-                });
-            } catch (err) {
-                console.warn("Could not get location for voice assistant:", err);
-            }
+    try {
+      let currentLocation = null;
+      if ("geolocation" in navigator) {
+        try {
+          currentLocation = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+              (position) => resolve({ lat: position.coords.latitude, lng: position.coords.longitude }),
+              (err) => reject(err),
+              { timeout: 5000 }
+            );
+          });
+        } catch (err) {
+          console.warn("Could not get location:", err);
         }
+      }
 
-        const response = await API.post("/assistant/voice", { 
-            audio: base64Audio, 
-            mimeType: mimeType,
-            location: currentLocation
-        });
-        
-        if (response.data && response.data.success) {
-            const result = response.data.data;
-            setTranscript(result.transcript);
-            setAiResponse(result.reply);
-            speakResponse(result.reply);
-        } else {
-            setAiResponse("Sorry, I couldn't process that. Please try again.");
-            speakResponse("Sorry, I couldn't process that. Please try again.");
-        }
-     } catch (err) {
-        console.error("Error querying voice assistant:", err);
-        setAiResponse("I'm having trouble connecting to my brain right now. Try again later.");
-        speakResponse("I'm having trouble connecting to my brain right now. Please check if backend is running.");
-     } finally {
-        setIsProcessing(false);
-     }
+      const response = await API.post("/assistant/voice", {
+        audio: base64Audio,
+        mimeType: mimeType,
+        location: currentLocation,
+        isFirstInteraction: isFirstInteractionRef.current,
+      });
+
+      if (response.data && response.data.success) {
+        const result = response.data.data;
+        // After first successful response, mark subsequent ones as NOT first
+        isFirstInteractionRef.current = false;
+        setTranscript(result.transcript);
+        setAiResponse(result.reply);
+        speakResponse(result.reply);
+      } else {
+        setAiResponse("Sorry, I couldn't process that. Please try again.");
+        speakResponse("Sorry, I couldn't process that. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error querying voice assistant:", err);
+      setAiResponse("I'm having trouble connecting. Try again later.");
+      speakResponse("I'm having trouble connecting. Please check if backend is running.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const speakResponse = async (text) => {
     stopAudio();
-    
-    // Text Processing: Remove markdown symbols and format text for better natural pauses
     const cleanText = text.replace(/[*#_`]/g, "");
-    
-    // Sentence Chunking: Split text into sentences.
-    const sentences = cleanText.split(/(?<=[.?!])\s+/).filter(s => s.trim().length > 0);
+    const sentences = cleanText.split(/(?<=[.?!])\s+/).filter((s) => s.trim().length > 0);
 
     const fetchAudio = async (sentence) => {
       try {
-        const response = await API.post("/assistant/speak", { text: sentence }, {
-          responseType: 'blob'
-        });
+        const response = await API.post("/assistant/speak", { text: sentence }, { responseType: "blob" });
         return response.data;
       } catch (err) {
-        console.error("Failed to generate speech chunk:", err);
         return null;
       }
     };
 
     const speakNativeFallback = (textToSpeak) => {
-      if ('speechSynthesis' in window) {
+      if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
         const isHindi = /[\u0900-\u097F]/.test(textToSpeak);
         const utterance = new SpeechSynthesisUtterance(textToSpeak.replace(/[*#_`]/g, ""));
-        utterance.lang = isHindi ? 'hi-IN' : 'en-IN';
+        utterance.lang = isHindi ? "hi-IN" : "en-IN";
         utterance.rate = 0.95;
         utterance.pitch = 1.05;
         window.speechSynthesis.speak(utterance);
@@ -166,55 +166,23 @@ export default function VoiceAssistant({ isOpen, onClose }) {
     };
 
     let nextAudioPromise = null;
-
     for (let i = 0; i < sentences.length; i++) {
-      if (!isOpen || isListening) break; 
-      
+      if (!isOpen || isListening) break;
       const audioBlob = nextAudioPromise ? await nextAudioPromise : await fetchAudio(sentences[i]);
-      
-      // FALLBACK: If ElevenLabs fails (e.g. proxy blocked), use native browser speech
-      if (!audioBlob) {
-        console.warn("ElevenLabs failed, falling back to native speech synthesis.");
-        speakNativeFallback(sentences.slice(i).join(" ")); // speak the rest natively
-        break; 
-      }
-
-      if (i + 1 < sentences.length) {
-        nextAudioPromise = fetchAudio(sentences[i + 1]);
-      } else {
-        nextAudioPromise = null;
-      }
-
+      if (!audioBlob) { speakNativeFallback(sentences.slice(i).join(" ")); break; }
+      if (i + 1 < sentences.length) nextAudioPromise = fetchAudio(sentences[i + 1]);
+      else nextAudioPromise = null;
       const audioUrl = URL.createObjectURL(audioBlob);
-      
       await new Promise((resolve) => {
         const audio = new Audio(audioUrl);
         currentAudioRef.current = audio;
-        
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-          resolve();
-        };
-        
-        audio.onerror = (e) => {
-          console.error("Audio playback error:", e);
-          URL.revokeObjectURL(audioUrl);
-          
-          // Try native fallback if the current audio failed to play
-          speakNativeFallback(sentences[i]);
-          resolve();
-        };
-        
-        audio.play().catch(e => {
-          console.error("Audio play failed, likely autoplay blocked:", e);
-          speakNativeFallback(sentences[i]);
-          resolve();
-        });
+        audio.onended = () => { URL.revokeObjectURL(audioUrl); resolve(); };
+        audio.onerror = () => { URL.revokeObjectURL(audioUrl); speakNativeFallback(sentences[i]); resolve(); };
+        audio.play().catch(() => { speakNativeFallback(sentences[i]); resolve(); });
       });
     }
   };
 
-  // Prevent background scrolling when open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -223,12 +191,48 @@ export default function VoiceAssistant({ isOpen, onClose }) {
       stopRecording();
       stopAudio();
     }
-    return () => { 
-        document.body.style.overflow = "auto"; 
-        stopRecording();
-        stopAudio();
+    return () => {
+      document.body.style.overflow = "auto";
+      stopRecording();
+      stopAudio();
     };
   }, [isOpen]);
+
+  // Blob animation configs
+  const blobs = [
+    // Magenta / hot-pink
+    {
+      color: "radial-gradient(circle at 40% 40%, #e040b0 0%, #d020c0 40%, transparent 70%)",
+      size: "75%",
+      initial: { top: "5%", left: "25%" },
+      animate: { x: [0, -30, 25, -15, 0], y: [0, 30, -20, 15, 0] },
+      duration: 16,
+    },
+    // Deep violet / purple
+    {
+      color: "radial-gradient(circle at 40% 40%, #7c3aed 0%, #6020d0 40%, transparent 70%)",
+      size: "80%",
+      initial: { top: "20%", left: "-5%" },
+      animate: { x: [0, 35, -20, 25, 0], y: [0, -25, 30, -15, 0] },
+      duration: 20,
+    },
+    // Soft periwinkle / blue
+    {
+      color: "radial-gradient(circle at 40% 40%, #93a8f0 0%, #7080e0 40%, transparent 70%)",
+      size: "72%",
+      initial: { bottom: "-5%", left: "15%" },
+      animate: { x: [0, 20, -30, 15, 0], y: [0, -30, 20, -25, 0] },
+      duration: 18,
+    },
+    // Lavender
+    {
+      color: "radial-gradient(circle at 40% 40%, #d4a0f8 0%, #b870f0 40%, transparent 70%)",
+      size: "65%",
+      initial: { top: "0%", right: "0%" },
+      animate: { x: [0, -20, 30, -10, 0], y: [0, 20, -15, 25, 0] },
+      duration: 22,
+    },
+  ];
 
   return (
     <AnimatePresence>
@@ -237,117 +241,289 @@ export default function VoiceAssistant({ isOpen, onClose }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden bg-black/40 backdrop-blur-sm"
         >
           {/* Modal Container */}
           <motion.div
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 20 }}
-            transition={{ type: "spring", bounce: 0.3, duration: 0.5 }}
-            className="w-full max-w-md bg-gray-900 border border-gray-700/50 rounded-3xl shadow-2xl overflow-hidden relative flex flex-col"
+            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.9, y: 20, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="w-full max-w-md bg-white rounded-[40px] shadow-2xl overflow-hidden relative flex flex-col aspect-[9/16] max-h-[90vh]"
+            style={{ background: "linear-gradient(180deg, #F0F4FF 0%, #FFFFFF 100%)" }}
           >
-            {/* Header */}
-            <div className="flex justify-between items-center p-5 border-b border-gray-800">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <Mic className="w-4 h-4 text-green-400" />
-                </div>
-                <h3 className="text-white font-medium">CropShield Voice Assistant</h3>
-              </div>
-              <button 
+            {/* Top Navigation */}
+            <div className="flex items-center justify-between px-6 pt-8 pb-4">
+              <button
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-800 hover:bg-gray-700 text-gray-400 transition"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/50 backdrop-blur-sm border border-black/5 text-black hover:bg-white/80 transition"
               >
-                <X className="w-4 h-4" />
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <h1 className="text-xl font-semibold text-[#1A1A1A]">Voice chat</h1>
+              <div className="w-10" />
+            </div>
+
+            {/* Status */}
+            <div className="text-center px-6 mb-4">
+              <motion.p
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-[#3E7BFA] font-medium text-sm"
+              >
+                {isListening ? "Listening..." : isProcessing ? "Just a moment..." : "Go ahead, I'm listening"}
+              </motion.p>
+            </div>
+
+            {/* ── Central Orb ── */}
+            <div className="flex-1 flex items-center justify-center relative overflow-hidden">
+              <div className="relative" style={{ width: 280, height: 280 }}>
+
+                {/* Soft bottom shadow/glow */}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: -20,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    width: 180,
+                    height: 40,
+                    borderRadius: "50%",
+                    background: "radial-gradient(ellipse, rgba(140,100,255,0.35) 0%, transparent 70%)",
+                    filter: "blur(10px)",
+                  }}
+                />
+
+                {/* ── Outer breathing scale ── */}
+                <motion.div
+                  animate={{ scale: isListening ? [1, 1.06, 1] : [1, 1.025, 1] }}
+                  transition={{ duration: isListening ? 0.9 : 5, repeat: Infinity, ease: "easeInOut" }}
+                  style={{ position: "absolute", inset: 0 }}
+                >
+                  {/* ── Sphere shell: liquid glass ── */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      // The subtle border = glass rim
+                      boxShadow: [
+                        "inset 0 2px 12px rgba(255,255,255,0.55)", // top inner highlight
+                        "inset 0 -4px 16px rgba(120,80,200,0.25)", // bottom inner purple tint
+                        "0 8px 40px rgba(100,60,200,0.28)",         // outer glow
+                        "0 0 0 1.5px rgba(255,255,255,0.50)",       // glass rim
+                      ].join(", "),
+                    }}
+                  >
+                    {/* ── Base fill ── */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "linear-gradient(145deg, #c8d4fc 0%, #b0bef8 40%, #a8b0f0 100%)",
+                      }}
+                    />
+
+                    {/* ── Animated blobs (blurred = liquid look) ── */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        filter: "blur(22px)",   // key: blur makes blobs blend into liquid
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {blobs.map((blob, i) => (
+                        <motion.div
+                          key={i}
+                          animate={blob.animate}
+                          transition={{
+                            duration: blob.duration,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            times: [0, 0.25, 0.5, 0.75, 1],
+                          }}
+                          style={{
+                            position: "absolute",
+                            width: blob.size,
+                            height: blob.size,
+                            borderRadius: "50%",
+                            background: blob.color,
+                            ...blob.initial,
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* ── Liquid glass surface overlay ── */}
+                    {/* Main frosted sheen */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "radial-gradient(ellipse at 38% 28%, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.06) 45%, transparent 70%)",
+                        borderRadius: "50%",
+                      }}
+                    />
+
+                    {/* Top-left primary glass highlight */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "6%",
+                        left: "12%",
+                        width: "52%",
+                        height: "36%",
+                        borderRadius: "50%",
+                        background: "radial-gradient(ellipse at 40% 40%, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.2) 50%, transparent 75%)",
+                        transform: "rotate(-38deg)",
+                        filter: "blur(2px)",
+                      }}
+                    />
+
+                    {/* Small bright specular dot */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "10%",
+                        left: "18%",
+                        width: "22%",
+                        height: "14%",
+                        borderRadius: "50%",
+                        background: "rgba(255,255,255,0.88)",
+                        transform: "rotate(-38deg)",
+                        filter: "blur(3px)",
+                      }}
+                    />
+
+                    {/* Bottom-right subtle reflection */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: "8%",
+                        right: "8%",
+                        width: "28%",
+                        height: "18%",
+                        borderRadius: "50%",
+                        background: "rgba(255,255,255,0.12)",
+                        filter: "blur(6px)",
+                      }}
+                    />
+
+                    {/* Glass edge refraction ring (inner) */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 2,
+                        borderRadius: "50%",
+                        border: "1px solid rgba(255,255,255,0.30)",
+                      }}
+                    />
+                  </div>
+                </motion.div>
+
+                {/* Listening pulse rings */}
+                {isListening && (
+                  <>
+                    <motion.div
+                      animate={{ scale: [1, 1.6], opacity: [0.3, 0] }}
+                      transition={{ repeat: Infinity, duration: 2, ease: "easeOut" }}
+                      style={{
+                        position: "absolute",
+                        inset: -12,
+                        borderRadius: "50%",
+                        background: "radial-gradient(circle, rgba(180,100,255,0.28) 0%, transparent 70%)",
+                        zIndex: 0,
+                      }}
+                    />
+                    <motion.div
+                      animate={{ scale: [1, 1.4], opacity: [0.2, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                      style={{
+                        position: "absolute",
+                        inset: -6,
+                        borderRadius: "50%",
+                        background: "radial-gradient(circle, rgba(130,80,240,0.22) 0%, transparent 70%)",
+                        zIndex: 0,
+                      }}
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* AI Response Text */}
+            <div className="px-8 py-4 min-h-[120px] flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={aiResponse + transcript}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="text-lg sm:text-xl font-medium text-[#1A1A1A] text-center leading-snug"
+                >
+                  {isListening && transcript ? `"${transcript}"` : aiResponse}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+
+            {/* Bottom Controls */}
+            <div className="flex items-center justify-between px-8 pb-10 pt-4">
+              <button className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm border border-black/5 text-[#4D4D4D] hover:bg-gray-50 transition">
+                <MessageCircle className="w-5 h-5" />
+              </button>
+
+              <div className="relative flex items-center justify-center">
+                {isListening && (
+                  <motion.div
+                    animate={{ scale: [1, 1.6], opacity: [0.4, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut" }}
+                    className="absolute w-16 h-16 bg-blue-500 rounded-full"
+                  />
+                )}
+                <button
+                  onClick={toggleListening}
+                  className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 ${
+                    isListening
+                      ? "bg-[#3E7BFA] text-white"
+                      : "bg-white text-[#3E7BFA] hover:bg-gray-50 border border-black/5"
+                  }`}
+                >
+                  {isProcessing ? (
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                  ) : isListening ? (
+                    <div className="flex gap-1 items-center h-3">
+                      {[1, 2, 3].map((i) => (
+                        <motion.span
+                          key={i}
+                          animate={{ height: [4, 12, 4] }}
+                          transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
+                          className="w-1 bg-white rounded-full"
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <Mic className="w-8 h-8" />
+                  )}
+                </button>
+              </div>
+
+              <button
+                onClick={onClose}
+                className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm border border-black/5 text-[#4D4D4D] hover:bg-gray-50 transition"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Chat Area */}
-            <div className="flex-1 p-6 min-h-[250px] max-h-[400px] overflow-y-auto flex flex-col gap-4">
-               
-               {/* Intro / AI Response Message */}
-               <motion.div 
-                 initial={{ opacity: 0, x: -10 }} 
-                 animate={{ opacity: 1, x: 0 }} 
-                 className="flex gap-3"
-               >
-                 <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-1">
-                   <Volume2 className="w-4 h-4 text-white" />
-                 </div>
-                 <div className="bg-gray-800 text-gray-200 p-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed border border-gray-700">
-                   {aiResponse ? aiResponse : (
-                     <div className="flex items-center gap-1 h-5">
-                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce"></span>
-                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce delay-75"></span>
-                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce delay-150"></span>
-                     </div>
-                   )}
-                 </div>
-               </motion.div>
-
-               {/* User Transcript Message */}
-               {transcript && (
-                 <motion.div 
-                   initial={{ opacity: 0, x: 10 }} 
-                   animate={{ opacity: 1, x: 0 }} 
-                   className="flex gap-3 justify-end mt-2"
-                 >
-                   <div className="bg-green-600 text-white p-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed max-w-[85%]">
-                     {transcript}
-                   </div>
-                 </motion.div>
-               )}
-
-               {error && (
-                 <p className="text-red-400 text-xs text-center mt-4 bg-red-400/10 p-2 rounded-lg border border-red-400/20">
-                   {error}
-                 </p>
-               )}
-            </div>
-
-            {/* Mic Button Area */}
-            <div className="p-6 flex flex-col items-center justify-center border-t border-gray-800 bg-gray-800/50">
-               
-               <div className="relative flex items-center justify-center mb-2">
-                 {/* Ripple effect when listening */}
-                 {isListening && (
-                   <>
-                     <motion.div 
-                        animate={{ scale: [1, 1.5, 2], opacity: [0.5, 0.2, 0] }} 
-                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut" }}
-                        className="absolute w-20 h-20 bg-green-500 rounded-full"
-                     />
-                     <motion.div 
-                        animate={{ scale: [1, 1.3, 1.8], opacity: [0.5, 0.3, 0] }} 
-                        transition={{ repeat: Infinity, duration: 1.5, delay: 0.5, ease: "easeOut" }}
-                        className="absolute w-20 h-20 bg-green-400 rounded-full"
-                     />
-                   </>
-                 )}
-
-                 <button
-                    onClick={toggleListening}
-                    className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
-                      isListening 
-                        ? 'bg-green-500 hover:bg-green-600 text-white shadow-green-500/50' 
-                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600'
-                    }`}
-                 >
-                    {isListening ? (
-                       <Square className="w-6 h-6 fill-white" />
-                    ) : isProcessing ? (
-                       <Loader2 className="w-8 h-8 animate-spin" />
-                    ) : (
-                       <Mic className="w-8 h-8" />
-                    )}
-                 </button>
-               </div>
-               
-               <p className={`text-xs mt-3 ${isListening ? 'text-green-400 font-medium' : 'text-gray-500'}`}>
-                 {isListening ? 'Listening... Tap to stop' : isProcessing ? 'Thinking...' : 'Tap to speak'}
-               </p>
-            </div>
+            {/* Error */}
+            {error && (
+              <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-red-50 text-red-600 px-4 py-1.5 rounded-full text-xs border border-red-100 font-medium whitespace-nowrap">
+                {error}
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

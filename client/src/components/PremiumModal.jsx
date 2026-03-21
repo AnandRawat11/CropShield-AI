@@ -8,13 +8,66 @@ const PremiumModal = ({ open, onClose, onUpgraded }) => {
 
   const handleUpgrade = async () => {
     try {
-      await new Promise((res) => setTimeout(res, 1200));
-      const res = await API.post("/auth/upgrade");
-      alert(t("premium.successAlert"));
-      onUpgraded(res.data);
-      onClose();
-    } catch {
-      alert(t("premium.failAlert"));
+      // 1. Load Razorpay script
+      const resLoad = await new Promise((resolve) => {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+
+      if (!resLoad) {
+        alert("Razorpay SDK failed to load. Are you online?");
+        return;
+      }
+
+      // 2. Call backend to create order
+      const { data } = await API.post("/payment/create-order");
+      
+      const options = {
+        key: data.key_id,
+        amount: data.order.amount,
+        currency: data.order.currency,
+        name: "CropShield AI",
+        description: t("premium.title") || "Upgrade to Premium",
+        image: "/logo.png",
+        order_id: data.order.id,
+        handler: async function (response) {
+          try {
+            // 3. Verify Payment
+            const verifyRes = await API.post("/payment/verify-payment", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            alert(t("premium.successAlert") || verifyRes.data.message);
+            onUpgraded(verifyRes.data);
+            onClose();
+          } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.error || "Payment verification failed");
+          }
+        },
+        prefill: {
+          name: "CropShield User",
+        },
+        theme: {
+          color: "#10b981", // Emerald 500
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      
+      paymentObject.on('payment.failed', function (response){
+        alert(response.error.description);
+      });
+      
+      paymentObject.open();
+
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || t("premium.failAlert") || "Something went wrong.");
     }
   };
 

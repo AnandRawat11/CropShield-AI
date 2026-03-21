@@ -223,7 +223,8 @@ const Register = () => {
           <button
             type="button"
             onClick={() => {
-              window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`;
+              const base = import.meta.env.VITE_API_BASE || "http://localhost:5001/api";
+              window.location.href = `${base}/auth/google`;
             }}
             className="flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition text-sm font-medium text-gray-700"
           >
