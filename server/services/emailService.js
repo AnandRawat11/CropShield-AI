@@ -1,14 +1,9 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // Use explicit TLS
-  auth: {
-    user: process.env.OTP_EMAIL,
-    pass: process.env.OTP_EMAIL_PASS
-  }
-});
+// Initialize Resend with the provided API Key.
+// (Falls back to the hardcoded key if RESEND_API_KEY environment variable is not explicitly set in the cloud).
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "re_2Xk4nuVa_FPEq23n43ihbRJhMLzrb5Trs";
+const resend = new Resend(RESEND_API_KEY);
 
 /**
  * Sends a 6-digit OTP to the given email address.
@@ -16,11 +11,12 @@ const transporter = nodemailer.createTransport({
  * @param {string} otp - 6-digit OTP code
  */
 const sendOtpEmail = async (to, otp) => {
-  const mailOptions = {
-    from: `"CropShield AI" <${process.env.OTP_EMAIL}>`,
-    to,
-    subject: "Your CropShield AI Login Code",
-    html: `
+  try {
+    const { data, error } = await resend.emails.send({
+      from: "CropShield AI <onboarding@resend.dev>",
+      to: [to],
+      subject: "Your CropShield AI Login Code",
+      html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; background: #f7f8f6; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #3ED500 0%, #2aaa00 100%); padding: 32px 40px; text-align: center;">
@@ -45,11 +41,16 @@ const sendOtpEmail = async (to, otp) => {
           <p style="color: #9ca3af; font-size: 11px; margin: 0;">© ${new Date().getFullYear()} CropShield AI · Protecting your crops with intelligence</p>
         </div>
       </div>
-    `
-  };
+      `
+    });
 
-  try {
-    await transporter.sendMail(mailOptions);
+    // Check if the Resend API explicitly returned an error (e.g. invalid permissions)
+    if (error) {
+      console.error("[emailService] Resend API Error:", error);
+      throw new Error(error.message);
+    }
+    
+    console.log(`[emailService] OTP successfully sent via Resend API to ${to}`);
   } catch (err) {
     console.error(`[emailService] Failed to send OTP to ${to}:`, err.message);
     throw err;
