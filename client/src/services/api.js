@@ -40,6 +40,7 @@ export const loginUser = (data) => API.post("/auth/login", data);
 export const registerUser = (data) => API.post("/auth/register", data);
 export const detectDisease = (formData, config = {}) =>
   API.post("/disease/detect", formData, config);
+export const checkHealth = () => API.get("/health");
 
 // ✅ DEFAULT EXPORT (THIS FIXES YOUR ERROR)
 export default API;

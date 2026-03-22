@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home";
@@ -11,9 +12,27 @@ import MobileBottomNav from "./components/MobileBottomNav";
 
 import OAuthSuccess from "./pages/OAuthSuccess";
 import ProtectedRoute from "./components/ProtectedRoute";
+import LoadingScreen from "./components/LoadingScreen";
+import { checkHealth } from "./services/api";
 
 
 function App() {
+  const [isServerReady, setIsServerReady] = useState(false);
+
+  useEffect(() => {
+    // Ping backend to wake up resources (Node.js and AI model)
+    checkHealth()
+      .then(() => setIsServerReady(true))
+      .catch((err) => {
+        console.warn("Health check failed, proceeding anyway", err);
+        setIsServerReady(true);
+      });
+  }, []);
+
+  if (!isServerReady) {
+    return <LoadingScreen />;
+  }
+
   return (
     <BrowserRouter>
       <Navbar />

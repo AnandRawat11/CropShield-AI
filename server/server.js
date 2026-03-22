@@ -58,6 +58,22 @@ app.get("/health", (req, res) => {
   res.status(200).send("Backend service running");
 });
 
+app.get("/api/health", async (req, res) => {
+  try {
+    const aiApiUrl = process.env.AI_API_URL;
+    if (aiApiUrl && !aiApiUrl.includes("127.0.0.1")) {
+      // Ping the AI API to wake it up (with a long timeout if sleeping)
+      await axios.get(`${aiApiUrl}/health`, { timeout: 60000 });
+    }
+
+    res.status(200).json({ status: "ok" });
+  } catch (error) {
+    console.error("[Health Check] AI API ping failed:", error.message);
+    // Still return 200 so the frontend loads, even if AI API is struggling
+    res.status(200).json({ status: "ok", ml_error: error.message });
+  }
+});
+
 app.use(express.json({ limit: "15mb" }));
 
 app.use(
