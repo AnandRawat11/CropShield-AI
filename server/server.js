@@ -97,18 +97,33 @@ connectDB().then(() => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Allowed CORS origins: ${allowedOrigins.join(", ")} + *.vercel.app`);
 
-    // Keep the Render AI API warm — ping every 13 min (Render sleeps after ~15 min)
+    // Keep the Render AI API warm — ping every 10 min (Render sleeps after ~15 min)
     const AI_API_URL = process.env.AI_API_URL;
-    if (AI_API_URL && !AI_API_URL.includes("127.0.0.1")) {
-      setInterval(async () => {
+    if (AI_API_URL && !AI_API_URL.includes("127.0.0.1") && !AI_API_URL.includes("localhost")) {
+      const pingAIApi = async () => {
         try {
-          await axios.get(`${AI_API_URL}/health`, { timeout: 10000 });
-          console.log("[keepAlive] AI API pinged successfully");
+          await axios.get(`${AI_API_URL}/health`, { timeout: 15000 });
+          console.log("[keepAlive] ✅ AI API pinged successfully");
         } catch (e) {
-          console.warn("[keepAlive] AI API ping failed (may be sleeping):", e.message);
+          if (e.response && e.response.status === 429) {
+            // Rate limited — service is alive, just throttling us
+            console.log("[keepAlive] AI API is alive (rate-limited 429 — normal on free tier)");
+          } else {
+            // Service sleeping — try root endpoint to wake it
+            try {
+              await axios.get(AI_API_URL, { timeout: 15000 });
+              console.log("[keepAlive] ✅ AI API woken via root endpoint");
+            } catch (e2) {
+              console.warn("[keepAlive] AI API may be in cold start:", e2.message);
+            }
+          }
         }
-      }, 13 * 60 * 1000); // 13 minutes
-      console.log("[keepAlive] Keep-alive pinger started for AI API");
+      };
+      // Initial ping on startup
+      setTimeout(pingAIApi, 5000);
+      // Then every 10 minutes
+      setInterval(pingAIApi, 10 * 60 * 1000);
+      console.log("[keepAlive] Keep-alive pinger started for AI API (every 10 min)");
     }
   });
 });
