@@ -44,9 +44,16 @@ app.use(
   })
 );
 
-// Request logger
+// Request logger — logs method, path, response status and duration
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  const start = Date.now();
+  const { method, originalUrl } = req;
+  res.on("finish", () => {
+    const ms = Date.now() - start;
+    const status = res.statusCode;
+    const icon = status >= 500 ? "❌" : status >= 400 ? "⚠️ " : "✅";
+    console.log(`[${new Date().toISOString()}] ${icon} ${method} ${originalUrl} → ${status} [${ms}ms]`);
+  });
   next();
 });
 
