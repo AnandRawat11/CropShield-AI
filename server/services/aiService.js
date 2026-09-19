@@ -12,6 +12,8 @@ const callAI = async (imageUrl, lang = "en") => {
     console.error("[aiService] ❌ GEMINI_API_KEY or GOOGLE_API_KEY is missing from environment variables!");
     throw new Error("AI analysis service temporarily unavailable (API key missing).");
   }
+  // Log masked key so you can verify the correct key is loaded in Render
+  console.log(`[aiService] 🔑 Using API key: ${apiKey.slice(0, 6)}...${apiKey.slice(-4)} (len=${apiKey.length})`);
   const ai = new GoogleGenAI({ apiKey });
 
   try {
@@ -199,22 +201,38 @@ Respond ONLY in ${langName}. All JSON field values must be in ${langName}.
 
   const base64Image = imageBuffer.toString("base64");
 
-  const geminiResponse = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: [{
-      role: 'user',
-      parts: [
-        { text: promptText },
-        { inlineData: { data: base64Image, mimeType: "image/jpeg" } }
-      ]
-    }],
-    config: {
-      systemInstruction,
-      responseMimeType: "application/json",
+  console.log("[aiService] 🤖 Calling Gemini API (gemini-2.5-flash)...");
+  let geminiResponse;
+  try {
+    geminiResponse = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: promptText },
+          { inlineData: { data: base64Image, mimeType: "image/jpeg" } }
+        ]
+      }],
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+      }
+    });
+  } catch (geminiErr) {
+    const status = geminiErr.status || geminiErr.httpErrorCode || geminiErr.code || "unknown";
+    const msg = geminiErr.message || String(geminiErr);
+    console.error(`[aiService] ❌ Gemini API call FAILED — HTTP ${status}: ${msg}`);
+    if (String(status) === "401" || msg.includes("API_KEY_INVALID") || msg.includes("invalid api key")) {
+      console.error("[aiService] 🔑 ROOT CAUSE: API key is INVALID or belongs to a different project. Check GEMINI_API_KEY in Render env vars.");
+    } else if (String(status) === "429") {
+      console.error("[aiService] 🔑 ROOT CAUSE: Gemini API quota exceeded.");
+    } else if (String(status) === "403") {
+      console.error("[aiService] 🔑 ROOT CAUSE: API key does not have permission to use this model.");
     }
-  });
+    throw geminiErr;
+  }
 
-  console.log("[aiService] Gemini-only analysis complete");
+  console.log("[aiService] ✅ Gemini-only analysis complete");
   const geminiText = geminiResponse.text;
 
   let result = null;
@@ -301,22 +319,38 @@ Respond ONLY in ${langName}. All JSON field values must be in ${langName}.
 
   const base64Image = imageBuffer.toString("base64");
 
-  const geminiResponse = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: [{
-      role: 'user',
-      parts: [
-        { text: promptText },
-        { inlineData: { data: base64Image, mimeType: "image/jpeg" } }
-      ]
-    }],
-    config: {
-      systemInstruction,
-      responseMimeType: "application/json",
+  console.log("[aiService] 🤖 Calling Gemini API with ML result (gemini-2.5-flash)...");
+  let geminiResponse;
+  try {
+    geminiResponse = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: promptText },
+          { inlineData: { data: base64Image, mimeType: "image/jpeg" } }
+        ]
+      }],
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+      }
+    });
+  } catch (geminiErr) {
+    const status = geminiErr.status || geminiErr.httpErrorCode || geminiErr.code || "unknown";
+    const msg = geminiErr.message || String(geminiErr);
+    console.error(`[aiService] ❌ Gemini API call FAILED — HTTP ${status}: ${msg}`);
+    if (String(status) === "401" || msg.includes("API_KEY_INVALID") || msg.includes("invalid api key")) {
+      console.error("[aiService] 🔑 ROOT CAUSE: API key is INVALID or belongs to a different project. Check GEMINI_API_KEY in Render env vars.");
+    } else if (String(status) === "429") {
+      console.error("[aiService] 🔑 ROOT CAUSE: Gemini API quota exceeded.");
+    } else if (String(status) === "403") {
+      console.error("[aiService] 🔑 ROOT CAUSE: API key does not have permission to use this model.");
     }
-  });
+    throw geminiErr;
+  }
 
-  console.log("[aiService] Step 3 OK: Gemini responded");
+  console.log("[aiService] ✅ Step 3 OK: Gemini responded");
   const geminiText = geminiResponse.text;
 
   let geminiResult = null;
