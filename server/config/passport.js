@@ -38,8 +38,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                         email: profile.emails && profile.emails.length > 0 ? profile.emails[0].value : undefined,
                         avatar: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : "",
                         plan: "FREE",
-                        dailyLimit: 3,
-                        remainingScans: 3
+                        dailyLimit: 50,
+                        remainingScans: 50
                     });
 
                     done(null, user);

@@ -27,8 +27,8 @@ exports.register = async (req, res) => {
       email,
       password: hashedPassword,
       plan: "FREE",
-      dailyLimit: 3,
-      remainingScans: 3
+      dailyLimit: 50,
+      remainingScans: 50
     });
 
     res.status(201).json({ message: "User registered successfully" });
@@ -164,8 +164,8 @@ exports.verifyOtp = async (req, res) => {
         email: email.toLowerCase().trim(),
         password: hashedPassword,
         plan: "FREE",
-        dailyLimit: 3,
-        remainingScans: 3
+        dailyLimit: 50,
+        remainingScans: 50
       });
     }
 

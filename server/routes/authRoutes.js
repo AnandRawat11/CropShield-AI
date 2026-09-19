@@ -7,7 +7,7 @@ const User = require("../models/User");
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
 
-const FREE_DAILY_LIMIT = 5; // 👈 change limit here anytime
+const FREE_DAILY_LIMIT = 50; // 👈 change limit here anytime
 
 /* ================= AUTH ================= */
 router.post("/register", register);

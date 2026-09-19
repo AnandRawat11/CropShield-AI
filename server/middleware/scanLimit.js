@@ -16,7 +16,7 @@ module.exports = async (req, res, next) => {
     }
 
     // ✅ CHECK LIMIT AFTER RESET
-    if (user.plan === "FREE" && user.dailyScans >= 5) {
+    if (user.plan === "FREE" && user.dailyScans >= 50) {
       return res.status(403).json({
         error: "Free limit reached. Upgrade to Premium."
       });
