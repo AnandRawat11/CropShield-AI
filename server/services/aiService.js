@@ -49,9 +49,16 @@ const callAI = async (imageUrl, lang = "en") => {
         console.log("[aiService] Step 2a: ✅ AI API is alive after", Math.round((Date.now() - warmStart) / 1000), "s");
         break;
       } catch (e) {
+        // KEY FIX: Any HTTP response (even 429, 500) means the service IS running.
+        // Only a network-level error (no response = ECONNREFUSED/ETIMEDOUT) means sleeping.
+        if (e.response) {
+          apiAlive = true;
+          console.log(`[aiService] Step 2a: ✅ AI API is running (HTTP ${e.response.status}) after`, Math.round((Date.now() - warmStart) / 1000), "s");
+          break;
+        }
         const elapsed = Math.round((Date.now() - warmStart) / 1000);
         const remaining = Math.round((WARM_UP_LIMIT_MS - (Date.now() - warmStart)) / 1000);
-        console.log(`[aiService] Step 2a: Waiting for AI API... (${elapsed}s elapsed, ${remaining}s left)`);
+        console.log(`[aiService] Step 2a: No response yet (${e.code || e.message}) — waiting... (${elapsed}s elapsed, ${remaining}s left)`);
         await sleep(POLL_INTERVAL_MS);
       }
     }
